@@ -11,9 +11,10 @@ __email__ = "marti.municoy@bsc.es"
 
 # Imports
 from __future__ import unicode_literals
-import os, glob, sys, copy
+import os
+import glob
 import argparse as ap
-from matplotlib import pyplot, patches
+from matplotlib import pyplot
 from math import isnan
 
 
@@ -40,7 +41,8 @@ def parseReports(reports_to_parse, parser):
     for reports_list in reports_to_parse:
         trajectories_found = glob.glob(reports_list)
         if len(trajectories_found) == 0:
-            print "Warning: path to report file \'", reports_list, "\' not found."
+            print("Warning: path to report file \'" +
+                  "{}".format(reports_list) + "\' not found.")
         for report in glob.glob(reports_list):
             reports.append(report)
 
@@ -76,13 +78,25 @@ def parseArgs():
     parser = ap.ArgumentParser()
     optional = parser._action_groups.pop()
     required = parser.add_argument_group('required arguments')
-    required.add_argument("-i", "--input", required=True, metavar="FILE", type=str, nargs='*', help="path to trajectory files")
-    optional.add_argument("-X", "--xaxis", metavar="INTEGER [METRIC]", type=str, nargs='*', help="column numbers and metric to plot on the X axis", default=None)
-    optional.add_argument("-Y", "--yaxis", metavar="INTEGER [METRIC]", type=str, nargs='*', help="column numbers and metric to plot on the Y axis", default=None)
-    optional.add_argument("-Z", "--zaxis", metavar="INTEGER [METRIC]", type=str, nargs='*', help="column numbers and metric to represent in the colorbar", default=None)
-    optional.add_argument("-o", "--output", metavar="PATH", type=str, help="output path to save figure", default=None)
-    optional.add_argument("-r", "--Zmin", metavar="FLOAT", type=float, help="minimum Z value for the colorbar", default=None)
-    optional.add_argument("-R", "--Zmax", metavar="FLOAT", type=float, help="maximum Z value for the colorbar", default=None)
+    required.add_argument("-i", "--input", required=True, metavar="FILE",
+                          type=str, nargs='*', help="path to report files")
+    optional.add_argument("-X", "--xaxis", metavar="INTEGER [METRIC]",
+                          type=str, nargs='*', help="column numbers and " +
+                          "metric to plot on the X axis", default=None)
+    optional.add_argument("-Y", "--yaxis", metavar="INTEGER [METRIC]",
+                          type=str, nargs='*', help="column numbers and " +
+                          "metric to plot on the Y axis", default=None)
+    optional.add_argument("-Z", "--zaxis", metavar="INTEGER [METRIC]",
+                          type=str, nargs='*', help="column numbers and " +
+                          "metric to represent in the colorbar", default=None)
+    optional.add_argument("-o", "--output", metavar="PATH", type=str,
+                          help="output path to save figure", default=None)
+    optional.add_argument("-r", "--Zmin", metavar="FLOAT", type=float,
+                          help="minimum Z value for the colorbar",
+                          default=None)
+    optional.add_argument("-R", "--Zmax", metavar="FLOAT", type=float,
+                          help="maximum Z value for the colorbar",
+                          default=None)
     parser._action_groups.append(optional)
     args = parser.parse_args()
 
@@ -94,7 +108,8 @@ def parseArgs():
 
     if z_data is None:
         if args.Zmin is not None or args.Zmax is not None:
-            print "No data to represent in the colorbar (Z axis). Custom ranges are ignored."
+            print("No data to represent in the colorbar (Z axis). " +
+                  "Custom ranges are ignored.")
         z_min = None
         z_max = None
     else:
@@ -149,7 +164,7 @@ def parseAxisData(axis_data):
     """
 
     if axis_data is None:
-        return ([None, ] , None)
+        return ([None, ], None)
     else:
         try:
             rows = [int(axis_data[0]), ]
@@ -165,7 +180,8 @@ def parseAxisData(axis_data):
                 try:
                     rows.append(int(axis_data[2]))
                 except (ValueError, IndexError):
-                    print("Warning: axis data not recognized: {}".format(axis_data))
+                    print("Warning: axis data not recognized: " +
+                          "{}".format(axis_data))
                     return ([None, ], None)
                 if len(axis_data) == label_index:
                     return (rows, '?')
@@ -226,15 +242,13 @@ def scatterPlot(reports,
             x_name = str(line.split("    ")[x_rows[0] - 1])
         if y_name is None:
             y_name = str(line.split("    ")[y_rows[0] - 1])
-        if (not None in z_rows) and (z_name is None):
+        if (None not in z_rows) and (z_name is None):
             z_name = str(line.split("    ")[z_rows[0] - 1])
             z_name = addUnits(z_name)
 
     for report in reports:
         report_directory = os.path.dirname(report)
         report_number = os.path.basename(report).split('_')[-1].split('.')[0]
-
-        labels_size = len(labels)
 
         with open(report, 'r') as report_file:
             next(report_file)
@@ -249,7 +263,7 @@ def scatterPlot(reports,
                 for y_row in y_rows:
                     y_total += float(line.split()[y_row - 1])
 
-                if not None in z_rows:
+                if None not in z_rows:
                     for z_row in z_rows:
                         z_total += float(line.split()[z_row - 1])
 
@@ -264,7 +278,9 @@ def scatterPlot(reports,
                 if not epoch.isdigit():
                     epoch = '0'
 
-                annotations.append("Epoch: " + epoch + "\n" + "Trajectory: " + report_number + "\n" + "Model: " + str(i + 1))
+                annotations.append("Epoch: " + epoch + "\n" +
+                                   "Trajectory: " + report_number + "\n" +
+                                   "Model: " + str(i + 1))
 
                 labels.append(0)
 
@@ -278,8 +294,6 @@ def scatterPlot(reports,
         cmap = pyplot.cm.autumn
     else:
         cmap = pyplot.cm.plasma
-        #cmap = pyplot.cm.viridis
-        #cmap = pyplot.cm.inferno
 
     norm = pyplot.Normalize(z_min, z_max)
 
@@ -290,20 +304,22 @@ def scatterPlot(reports,
     else:
         s = None
 
-    sc = pyplot.scatter(x_values, y_values, c=z_values, cmap=cmap, s=s, norm=norm)
+    sc = pyplot.scatter(x_values, y_values, c=z_values, cmap=cmap, s=s,
+                        norm=norm)
 
     ax.margins(0.05)
     ax.set_facecolor('lightgray')
     pyplot.ylabel(y_name)
     pyplot.xlabel(x_name)
 
-    annot = ax.annotate("", xy=(0,0), xytext=(20,20),textcoords="offset points",
+    annot = ax.annotate("", xy=(0, 0), xytext=(20, 20),
+                        textcoords="offset points",
                         bbox=dict(boxstyle="round", fc="w"),
                         arrowprops=dict(arrowstyle="->"))
     annot.set_visible(False)
 
     # Activate the colorbar only if the Z axis contains data to plot
-    if not None in z_rows:
+    if None not in z_rows:
         cbar = pyplot.colorbar(sc, drawedges=False)
         cbar.ax.set_ylabel(z_name)
 
@@ -312,7 +328,8 @@ def scatterPlot(reports,
         pos = sc.get_offsets()[ind["ind"][0]]
         annot.xy = pos
         annot.set_text(annotations[int(ind["ind"][0])])
-        annot.get_bbox_patch().set_facecolor(cmap(norm(z_values[ind["ind"][0]])))
+        annot.get_bbox_patch().set_facecolor(cmap(norm(
+            z_values[ind["ind"][0]])))
 
     def hover(event):
         """Action to perform when hovering the mouse on a point"""
@@ -331,7 +348,8 @@ def scatterPlot(reports,
     # Respond to mouse motion
     fig.canvas.mpl_connect("motion_notify_event", hover)
 
-    # Save or display the plot depending on whether an output path was set or not
+    # Save or display the plot depending on whether an output path was set or
+    # not
     if output_path is not None:
         pyplot.savefig(output_path)
     else:
