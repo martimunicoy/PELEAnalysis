@@ -69,7 +69,8 @@ class Simulation:
         self.reports[directory] = []
 
         for file in glob.glob(directory + "/" + self.report_name + "*"):
-            report = Report(directory, os.path.basename(file), self.report_name, epoch=epoch)
+            report = Report(directory, os.path.basename(file),
+                            self.report_name, epoch=epoch)
             report.setTrajectoryFile(self.trajectory_name)
             report.setLogFile(self.logfile_name)
 
@@ -86,6 +87,7 @@ class Report:
         self.trajectory_id = int(name.split(report_name)[1].split('.')[-1])
         self.trajectory_file = None
         self.log_file = None
+        self.metrics = self.getMetrics()
 
     def setTrajectoryFile(self, trajectory_name):
         name = trajectory_name + str(self.trajectory_id) + ".pdb"
@@ -101,6 +103,22 @@ class Report:
                               self.trajectory_id)
             self.log_file = logfile
 
+    def getMetrics(self):
+        with open(self.path + "/" + self.name) as report_file:
+            metrics = report_file.readline()
+            metrics = metrics.strip()
+            return metrics.split("    ")
+
+    def addMetric(self, metric_name, metric_value):
+        if metric_name not in self.metrics:
+            with open(self.path + "/" + self.name) as report_file:
+                metrics = report_file.readline()
+                data = report_file.readlines()
+
+            metrics = metrics.strip() + "    " + metric_name + "\n"
+            for i, line in enumerate(data):
+                line = line.strip() + "    " + metric_value[i] + "\n"
+
 
 class Trajectory:
 
@@ -110,12 +128,12 @@ class Trajectory:
         self.report_file = report_file
         self.epoch = epoch
         self.trajectory_id = trajectory_id
-        self.models = self.getNumberOfModels()
+        self.models = None
 
     def getNumberOfModels(self):
         models = 0
         with open(self.path + "/" + self.name) as report_file:
-            for line in report_file:
+            for line in enumerate(report_file):
                 if line.startswith("MODEL"):
                     models += 1
         return models
@@ -243,12 +261,16 @@ def main():
     # Parse command-line arguments
     simulation_dir, atom1, atom2 = parseArgs()
 
-    simulation = Simulation(simulation_dir, sim_type="Adaptive")
+    simulation = Simulation(simulation_dir, sim_type="PELE")
 
     simulation.getOutputFiles()
 
-    for report in simulation.reports["ARO_ISO_REF/1"]:
-        print(report.name, report.epoch, report.trajectory_id, report.trajectory_file.models)
+    simulation.reports["./ARO_ISO_REF/1"][0].addMetric("test", 1)
+
+    """
+    for report in simulation.reports["./ARO_ISO_REF/1"]:
+        print(report.name, report.epoch, report.trajectory_id, report.metrics)
+    """
 
 
 if __name__ == "__main__":
