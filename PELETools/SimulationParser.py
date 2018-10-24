@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import os
 import glob
 import sys
+from PELETools.Molecules import atomBuilder
 
 
 # Script information
@@ -59,9 +60,17 @@ class Simulation:
             print("A total of {}".format(self.trajectories) +
                   " reports were found.")
 
+        else:
+            print("Wrong Simulation type")
+            sys.exit(1)
+
+        if self.epochs == 0 or self.epochs is None:
+            trajectories_per_epoch = self.trajectories
+        else:
+            trajectories_per_epoch = self.trajectories / self.epochs
+
         self.iterateOverReports = self.reportIterator(self.reports,
-                                                      self.trajectories /
-                                                      self.epochs)
+                                                      trajectories_per_epoch)
 
     def getOutputFilesHere(self, directory):
         if self.type is "Adaptive":
@@ -114,23 +123,23 @@ class Report:
         self.name = name
         self.epoch = epoch
         self.trajectory_id = int(name.split(report_name)[1].split('.')[-1])
-        self.trajectory_file = None
-        self.log_file = None
+        self.trajectory = None
+        self.logfile = None
         self.metrics, self.models = self.getReportInfo()
 
     def setTrajectoryFile(self, trajectory_name):
         name = trajectory_name + str(self.trajectory_id) + ".pdb"
         if os.path.exists(self.path + "/" + name):
-            trajectory_file = Trajectory(name, self.path, self, self.epoch,
-                                         self.trajectory_id)
-            self.trajectory_file = trajectory_file
+            trajectory = Trajectory(name, self.path, self, self.epoch,
+                                    self.trajectory_id, self.models)
+            self.trajectory = trajectory
 
     def setLogFile(self, logfile_name):
         name = logfile_name + str(self.trajectory_id)
         if os.path.exists(self.path + "/" + name):
             logfile = Logfile(name, self.path, self, self.epoch,
                               self.trajectory_id)
-            self.log_file = logfile
+            self.logfile = logfile
 
     def getReportInfo(self):
         models = 0
@@ -139,16 +148,17 @@ class Report:
             labels = labels.strip()
             label_pairing = {}
             for col, label in enumerate(labels.split("    ")):
-                label_pairing[label] = col + 1
+                label_pairing[label] = col
             for line in report_file:
                 models += 1
-        return label_pairing, models
+        return label_pairing, Models(models)
 
     def getMetric(self, col_num=None, metric_name=None):
         if col_num is None and metric_name is None:
             print("Report:getMetric: a column number or a metric name need" +
                   " to be specified to get a metric")
             sys.exit(1)
+
         elif col_num is None:
             col_num = self.metrics[metric_name]
 
@@ -156,23 +166,93 @@ class Report:
 
         with open(self.path + "/" + self.name) as report_file:
             report_file.readline()
-            for line in report_file:
-                line = line.strip()
-                value = float(line.split("    ")[col_num - 1])
-                metric_values.append(value)
+            for i, line in enumerate(report_file):
+                if self.models.active[i]:
+                    line = line.strip()
+                    value = float(line.split("    ")[col_num - 1])
+                    metric_values.append(value)
 
         return metric_values
+
+    def addMetric(self, metric_name, values):
+        with open(self.path + "/" + self.name) as report_file:
+            data = report_file.read()
+
+        lines = data.split("\n")
+        new_lines = []
+
+        j = 0
+
+        for i, line in enumerate(lines):
+            if i == 0:
+                line += "{}    ".format(metric_name)
+            elif i <= self.models.number:
+                if self.models.active[i - 1]:
+                    line += "{0:.4f}    ".format(values[i - 1 - j])
+                else:
+                    j += 1
+            else:
+                break
+            new_lines.append(line)
+
+        with open(self.path + "/mod_" + self.name, "w") as report_file:
+            for line in new_lines:
+                report_file.write(line + "\n")
 
 
 class Trajectory:
 
-    def __init__(self, name, path, report_file, epoch, trajectory_id):
+    def __init__(self, name, path, report_file, epoch, trajectory_id,
+                 models):
         self.name = name
         self.path = path
         self.report_file = report_file
         self.epoch = epoch
         self.trajectory_id = trajectory_id
-        self.models = None
+        self.system_size = None
+        self.models = models
+
+    def getSystemSize(self):
+        with open(self.path + "/" + self.name) as trajectory_file:
+            for size, line in enumerate(trajectory_file):
+                if line.startswith("ENDMDL"):
+                    break
+            return size + 1
+
+    def getAtoms(self, atom_data):
+        if self.system_size is None:
+            self.system_size = self.getSystemSize()
+
+        _, _, atom_name = atom_data
+        atom_name.replace("_", " ")
+        atom_data[2] = atom_name
+
+        with open(self.path + "/" + self.name) as trajectory_file:
+            atom_matchs = []
+            for i, line in enumerate(trajectory_file):
+                if containsAtom(line, atom_data):
+                    break
+                if i > self.system_size:
+                    print("Trajectory:getAtoms: atom {}".format(atom_data) +
+                          " not found in trajectory {}".format(self.path +
+                                                               "/" +
+                                                               self.name))
+                    return []
+
+            if self.models.active[0]:
+                atom_matchs.append(atomBuilder(line, self, 1))
+
+            for model in self.models.active[1:]:
+                line = self.goToNextModelLine(trajectory_file)
+                if model:
+                    atom_matchs.append(atomBuilder(line, self, 1))
+
+            return atom_matchs
+
+    def goToNextModelLine(self, file):
+        for i in range(0, self.system_size):
+            file.readline()
+        return file.readline()
 
 
 class Logfile:
@@ -190,6 +270,49 @@ class Atom:
         self.chain = chain
         self.residue_id = residue_id
         self.atom_name = atom_name
+
+
+class Models:
+
+    def __init__(self, models_number):
+        self.number = models_number
+        self.active = []
+        for i in range(0, self.number):
+            self.active.append(True)
+        self.current_model = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current_model == self.number:
+            self.current_model = 0
+            raise StopIteration
+        else:
+            self.current_model += 1
+            return self.active[self.current_model - 1]
+
+    def inactivate(self, model_number):
+        try:
+            self.active[model_number] = False
+        except IndexError:
+            print("Models:inactivate: model {}".format(model_number) +
+                  " could not be deactivated")
+
+    def activate(self, model_number):
+        try:
+            self.active[model_number] = True
+        except IndexError:
+            print("Models:activate: model {}".format(model_number) +
+                  " could not be activated")
+
+    def activateAll(self):
+        for i in range(0, len(self.active)):
+            self.active[i] = True
+
+    def deactivateAll(self):
+        for i in range(0, len(self.active)):
+            self.active[i] = False
 
 
 # Functions
@@ -226,3 +349,23 @@ def parseReports(reports_to_parse, parser):
         exit(1)
 
     return reports
+
+
+def containsAtom(line, atom_data):
+    if len(line) < 80:
+        return False
+
+    chain, residue, atom_name = atom_data
+    residue = int(residue)
+
+    line_chain = line[21]
+    line_residue = int(line[23:26])
+    line_atom_name = line[12:16]
+
+    if line_chain == chain:
+        if line_residue == residue:
+            if line_atom_name == atom_name:
+                return True
+
+    return False
+
