@@ -2,14 +2,17 @@
 
 
 # Imports
+import sys
 import json
 from json import JSONDecodeError
+from os.path import dirname
 
 
 # Classes
-class ControlFile:
+class ControlFile(object):
     def __init__(self, path, type=None):
         self.path = path
+        self.dir = dirname(path)
         self.data = self.parseJsonFile()
         self.type = self.assignType(type)
 
@@ -26,6 +29,10 @@ class ControlFile:
         return type
 
     def parseJsonFile(self):
+        if type(self.path) is not str:
+            print("ControlFile.parseJsonFile error: unexpected path" +
+                  " to Control File: {}".format(self.path))
+            sys.exit(1)
         with open(self.path) as cf:
             try:
                 return json.load(cf)
@@ -33,6 +40,29 @@ class ControlFile:
                 cf.seek(0)
                 data = removeAdaptiveSymbolsFromPELEControlFile(cf)
                 return json.loads(data)
+
+
+class AdaptiveControlFile(ControlFile):
+    def __init__(self, path, type=None):
+        self.path = path
+        self.data = self.parseJsonFile()
+        self.type = self.assignType(type)
+
+    def getPDBs(self):
+        PDBs = self.data['generalParams']['initialStructures']
+        return PDBs
+
+
+# TO DO
+class PELEControlFile(ControlFile):
+    def __init__(self, path, type=None):
+        self.path = path
+        self.data = self.parseJsonFile()
+        self.type = self.assignType(type)
+
+    def getPDBs(self):
+        PDBs = self.data['Initialization']['MultipleComplex']
+        return PDBs
 
 
 # Functions

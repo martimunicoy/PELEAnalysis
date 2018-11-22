@@ -7,6 +7,7 @@ import os
 import glob
 import sys
 from PELETools.Molecules import atomBuilder
+from PELETools.Molecules import linkBuilder
 
 
 # Script information
@@ -51,13 +52,13 @@ class Simulation:
                     subdir = os.path.basename(subdir)
                     if subdir.isdigit():
                         self.getOutputFilesHere(directory + subdir)
-            print("A total of {} epochs and ".format(self.epochs) +
+            print("  - A total of {} epochs and ".format(self.epochs) +
                   "{} reports were found.".format(self.trajectories))
 
         elif self.type is "PELE":
             for directory in self.directories:
                 self.getOutputFilesHere(directory)
-            print("A total of {}".format(self.trajectories) +
+            print("  - A total of {}".format(self.trajectories) +
                   " reports were found.")
 
         else:
@@ -71,6 +72,8 @@ class Simulation:
 
         self.iterateOverReports = self.reportIterator(self.reports,
                                                       trajectories_per_epoch)
+
+        self.indexed_atoms = self.indexAtoms()
 
     def getOutputFilesHere(self, directory):
         if self.type is "Adaptive":
@@ -90,6 +93,63 @@ class Simulation:
 
             self.reports[directory].append(report)
             self.trajectories += 1
+
+    def indexAtoms(self):
+        indexedAtoms = {}
+
+        trajectory = self[0].trajectory
+
+        if trajectory.system_size is None:
+            trajectory.system_size = trajectory.getSystemSize()
+
+        path = trajectory.path + '/' + trajectory.name
+
+        with open(path) as trajectory_file:
+            for i, line in enumerate(trajectory_file):
+                if int(i / (self.system_size + 1) > 0):
+                    break
+
+                line = line.strip()
+                fields = line.split()
+
+                linetype = fields[0]
+                chain = fields[4]
+                number = fields[5]
+                name = fields[2]
+
+                if linetype in ["HETATM", "ATOM"]:
+                    if chain in indexedAtoms:
+                        if number in indexedAtoms[chain]:
+                            if type(indexedAtoms[chain][number]) != dict:
+                                indexedAtoms[chain][number] = {}
+                            indexedAtoms[chain][number][name] = i
+                        else:
+                            if type(indexedAtoms[chain]) != dict:
+                                indexedAtoms[chain] = {}
+                            indexedAtoms[chain][number] = {}
+                            indexedAtoms[chain][number][name] = {}
+
+                    try:
+                        if type(indexedAtoms[fields[4]]) != dict:
+                            indexedAtoms[fields[4]] = {}
+                    except KeyError:
+                        indexedAtoms[fields[4]] = {}
+
+                    atom_description = fields[4] + ':' + fields[5] + ':' + \
+                        fields[2]
+                    indexedAtoms[fields[4]]
+
+
+
+
+
+        return indexedAtoms
+
+    def __getitem__(self, key):
+        for i, report in enumerate(self.iterateOverReports):
+            if (i == key):
+                return report
+        raise IndexError
 
     class reportIterator:
         def __init__(self, reports, trajs):
@@ -219,12 +279,13 @@ class Trajectory:
                     break
             return size + 1
 
+    # @TODO: fix bug in self.models.active[1:]
     def getAtoms(self, atom_data):
         if self.system_size is None:
             self.system_size = self.getSystemSize()
 
         _, _, atom_name = atom_data
-        atom_name.replace("_", " ")
+        atom_name = atom_name.replace("_", " ")
         atom_data[2] = atom_name
 
         with open(self.path + "/" + self.name) as trajectory_file:
@@ -248,6 +309,43 @@ class Trajectory:
                     atom_matchs.append(atomBuilder(line, self, 1))
 
             return atom_matchs
+
+    def isLinkThere(self, link_data):
+        if self.system_size is None:
+            self.system_size = self.getSystemSize()
+
+        with open(self.path + "/" + self.name) as trajectory_file:
+            for i, line in enumerate(trajectory_file):
+                if containsLink(line, link_data):
+                    return True
+                if i > self.system_size:
+                    break
+
+        return False
+
+    def getLinks(self, link_data):
+        if self.system_size is None:
+            self.system_size = self.getSystemSize()
+
+        links_list = []
+
+        with open(self.path + "/" + self.name) as trajectory_file:
+            list_of_atoms = []
+            model = 0
+            for i, line in enumerate(trajectory_file):
+                if (int(i / (self.system_size + 1)) != model):
+                    links_list.append(linkBuilder(list_of_atoms))
+                    list_of_atoms = []
+                    model += 1
+
+                if not self.models.active[model]:
+                    continue
+
+                if containsLink(line, link_data):
+                    atom = atomBuilder(line, self, 1)
+                    list_of_atoms.append(atom)
+
+        return links_list
 
     def goToNextModelLine(self, file):
         for i in range(0, self.system_size):
@@ -351,6 +449,23 @@ def parseReports(reports_to_parse, parser):
     return reports
 
 
+def containsLink(line, link_data):
+    if len(line) < 80:
+        return False
+
+    chain, residue = link_data
+    residue = int(residue)
+
+    line_chain = line[21]
+    line_residue = int(line[23:26])
+
+    if line_chain == chain:
+        if line_residue == residue:
+            return True
+
+    return False
+
+
 def containsAtom(line, atom_data):
     if len(line) < 80:
         return False
@@ -368,4 +483,3 @@ def containsAtom(line, atom_data):
                 return True
 
     return False
-

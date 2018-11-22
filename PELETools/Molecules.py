@@ -4,6 +4,7 @@
 # Imports
 from __future__ import unicode_literals
 import numpy as np
+import sys
 
 
 # Script information
@@ -28,6 +29,45 @@ class Atom:
         self.element = element
         self.trajectory = trajectory
         self.model = model
+
+
+class Link:
+    def __init__(self, name, number, list_of_atoms):
+        self.name = name
+        self.number = number
+        self.list_of_atoms = list_of_atoms
+        self.iterator_index = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.iterator_index == len(self.list_of_atoms):
+            self.iterator_index = 0
+            raise StopIteration
+        else:
+            self.iterator_index += 1
+            return self.list_of_atoms[self.iterator_index - 1]
+
+
+def linkBuilder(list_of_atoms):
+    name = list_of_atoms[0].residue_name
+    number = list_of_atoms[0].residue_number
+
+    for atom in list_of_atoms:
+        if atom.residue_name != name:
+            print("Molecules:linkBuilder: Error, atoms have different " +
+                  "residue names and they must belong to the same PDB residue")
+            sys.exit(1)
+        if atom.residue_number != number:
+            print("Molecules:linkBuilder: Error, atoms have different " +
+                  "residue numbers and they must belong to the same PDB " +
+                  "residue")
+            sys.exit(1)
+
+    link = Link(name, number, list_of_atoms)
+
+    return link
 
 
 def atomBuilder(line, trajectory, model):
