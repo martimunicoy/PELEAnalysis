@@ -6,12 +6,11 @@ import argparse as ap
 import sys
 import os
 from array import array
-from copy import copy
+
 
 # PELE imports
 from PELETools.Utils import isThereAFile
-from PELETools.ControlFileParser import ControlFile
-from PELETools.SimulationParser import Simulation
+from PELETools.ControlFileParser import getControlFiles
 
 
 # Constants
@@ -52,37 +51,6 @@ def parseArgs():
     return cf_path, bc_path
 
 
-def getControlFiles(cf_path):
-    print(" - Retrieving control files:")
-
-    adaptive_cf = ControlFile(cf_path)
-
-    if adaptive_cf.type == "Adaptive":
-        print("  - Detected Adaptive control file at " +
-              "{}".format(adaptive_cf.path))
-
-        pcf_path = os.path.dirname(adaptive_cf.path) + "/" + \
-            adaptive_cf.data["simulation"]["params"]["controlFile"]
-        pcf_path = os.path.abspath(pcf_path)
-
-        if not isThereAFile(pcf_path):
-            print("Error: PELE control file not found at " +
-                  "\'{}\'".format(pcf_path))
-            sys.exit(1)
-
-        pele_cf = ControlFile(pcf_path)
-
-        print("  - Detected PELE control file at " +
-              "{}".format(pele_cf.path))
-    else:
-        print("  - Detected PELE control file at " +
-              "{}".format(adaptive_cf.path))
-        pele_cf = copy(adaptive_cf)
-        adaptive_cf = None
-
-    return adaptive_cf, pele_cf
-
-
 def getPerturbedWater(pele_cf):
     print(" - Looking for the perturbed water molecule:")
 
@@ -110,12 +78,11 @@ def getPerturbedWater(pele_cf):
 
 
 def parseSimulation(control_file):
-    simulation_dir = os.path.dirname(control_file.path) + '/' + \
-        control_file.data["generalParams"]["outputPath"] + '/'
-    print(" - Parsing simulation from directory: {}".format(simulation_dir))
+    print(" - Parsing simulation")
+    simulation = control_file.getSimulation()
 
-    simulation = Simulation(simulation_dir, sim_type="Adaptive")
-    simulation.getOutputFiles()
+    print(" - Indexing simulation atoms")
+    simulation.PDBHandler.indexAtoms()
 
     return simulation
 
@@ -132,23 +99,31 @@ def getWaterCoords(simulation, p_water):
 
     """
     for report in simulation.iterateOverReports:
+        print(report.name)
         for atom in WATER_ATOMS:
             for water in report.trajectory.getAtoms([chain, atom_id, atom]):
+                print(water.atom_name, water.coords)
                 for coord in water.coords.tolist():
                     water_coords.append(coord)
+        break
     """
 
+    """"""
     if not simulation[0].trajectory.isLinkThere(link_data):
         print("Error: link {} not found in trajectory ".format(link_data) +
               "{}".format(simulation.trajectories[0].path))
         sys.exit(1)
 
     for report in simulation.iterateOverReports:
+        print(report.name)
         for link in report.trajectory.getLinks(link_data):
             for atom in link:
+                print(atom.atom_name, atom.coords)
                 for coord in atom.coords.tolist():
                     water_coords.append(coord)
+        break
 
+    """"""
     print("  - Retrieved {} water coordinates".format(len(water_coords)))
 
     return water_coords
@@ -201,7 +176,7 @@ def main():
     else:
         print(" Nothing to do")
 
-    
+
 
     #output_file = saveWaterCoords(simulation, perturbed_water)
 

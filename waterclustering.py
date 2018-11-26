@@ -1,4 +1,4 @@
-from PELEOutputParser.PELESimulation import Simulation
+from PELETools.SimulationParser import Simulation
 import numpy as np
 from numpy import isnan
 
