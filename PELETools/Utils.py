@@ -15,7 +15,17 @@ __email__ = "marti.municoy@bsc.es"
 
 # Functions
 def isThereAFile(file_path):
-    if not os.path.exists(file_path):
-        return False
-    else:
+    if os.path.exists(file_path):
         return True
+    else:
+        return False
+
+
+def fromDictValuesToList(input_dict):
+    output_list = []
+    for key, value in input_dict.items():
+        if type(value) is dict:
+            value = fromDictValuesToList(value)
+        for element in value:
+            output_list.append(element)
+    return output_list
