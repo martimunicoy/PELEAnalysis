@@ -2,55 +2,84 @@
 
 
 # Standard imports
-import sys
 import os
 import json
 
 
 # PELE imports
-from PELETools.SimulationParser import simulationBuilderFromAdaptiveCF
-from PELETools.Utils import isThereAFile
+from .SimulationParser import simulationBuilderFromAdaptiveCF
+from .Utils import isThereAFile
 
 
 # Classes
-class ControlFile(object):
-    def __init__(self, path, type=None):
-        self.path = path
-        self.dir = os.path.dirname(path)
-        self.data = self.parseJsonFile()
-        self.type = self.assignType(type)
+class ControlFileBuilder(object):
+    def __init__(self, path_to_report):
+        self._path_to_report = str(path_to_report)
 
-    def assignType(self, type):
-        if type is None:
-            return identifyControlFileType(self)
-        elif type == "PELE":
+    @property
+    def path_to_report(self):
+        return self._path_to_report
+
+    def build(self):
+        data = self._parseJsonFile()
+        control_file_type = self._identifyControlFileType(data)
+
+        if (control_file_type == 'Adaptive'):
+            return AdaptiveControlFile(self.path_to_report, data)
+        elif (control_file_type == 'PELE'):
+            return PELEControlFile(self.path_to_report, data)
+
+    def _parseJsonFile(self):
+        try:
+            with open(self.path_to_report) as cf:
+                try:
+                    return json.load(cf)
+                except json.JSONDecodeError:
+                    cf.seek(0)
+                    data = removeAdaptiveSymbolsFromPELEControlFile(cf)
+                    return json.loads(data)
+
+        except FileNotFoundError:
+            raise NameError("Invalid control file path: \'{}\'".format(
+                self.path))
+
+    def _identifyControlFileType(self, data):
+        if ('generalParams' in data):
+            return 'Adaptive'
+        elif ('Initialization' in data):
             return "PELE"
-        elif type == "Adaptive":
-            return "Adaptive"
         else:
-            print("ControlFile.assignType error: unexpected type " +
-                  "{}".format(type))
-        return type
+            raise NameError('Control file type not recognized: \'{}\''.format(
+                self.path))
 
-    def parseJsonFile(self):
-        if type(self.path) is not str:
-            print("ControlFile.parseJsonFile error: unexpected path" +
-                  " to Control File: {}".format(self.path))
-            sys.exit(1)
-        with open(self.path) as cf:
-            try:
-                return json.load(cf)
-            except json.JSONDecodeError:
-                cf.seek(0)
-                data = removeAdaptiveSymbolsFromPELEControlFile(cf)
-                return json.loads(data)
+
+class ControlFile(object):
+    def __init__(self, path, data):
+        self._path = path
+        self._dir = os.path.dirname(path)
+        self._data = data
+
+    @property
+    def path(self):
+        return self._path
+
+    @property
+    def dir(self):
+        return self._dir
+
+    @property
+    def data(self):
+        return self._data
+
+    @property
+    def type(self):
+        return self._type
 
 
 class AdaptiveControlFile(ControlFile):
-    def __init__(self, path, type=None):
-        self.path = path
-        self.data = self.parseJsonFile()
-        self.type = self.assignType(type)
+    def __init__(self, path, data):
+        self._type = "Adaptive"
+        ControlFile.__init__(self, path, data)
 
     def getPDBs(self):
         PDBs = self.data['generalParams']['initialStructures']
@@ -67,7 +96,8 @@ class AdaptiveControlFile(ControlFile):
             return None
 
         else:
-            return PELEControlFile(pcf_path)
+            builder = ControlFileBuilder(pcf_path)
+            return builder.build()
 
     def getSimulation(self):
         pele_cf = self.getPELEControlFile()
@@ -75,12 +105,10 @@ class AdaptiveControlFile(ControlFile):
         return simulation
 
 
-# TO DO
 class PELEControlFile(ControlFile):
-    def __init__(self, path, type=None):
-        self.path = path
-        self.data = self.parseJsonFile()
-        self.type = self.assignType(type)
+    def __init__(self, path, data):
+        self._type = "PELE"
+        ControlFile.__init__(self, path, data)
 
     def getPDBs(self):
         PDBs = self.data['Initialization']['MultipleComplex']
@@ -92,45 +120,6 @@ class PELEControlFile(ControlFile):
 
 
 # Functions
-def getControlFiles(cf_path):
-    print(" - Retrieving control files:")
-
-    control_file = ControlFile(cf_path)
-
-    if control_file.type == "Adaptive":
-        print("  - Detected Adaptive control file at " +
-              "{}".format(control_file.path))
-        adaptive_cf = AdaptiveControlFile(cf_path)
-
-        pcf_path = os.path.dirname(adaptive_cf.path) + "/" + \
-            adaptive_cf.data["simulation"]["params"]["controlFile"]
-        pcf_path = os.path.abspath(pcf_path)
-
-        if not isThereAFile(pcf_path):
-            print("Error: PELE control file not found at " +
-                  "\'{}\'".format(pcf_path))
-            sys.exit(1)
-
-        pele_cf = PELEControlFile(pcf_path)
-
-        print("  - Detected PELE control file at " +
-              "{}".format(pele_cf.path))
-    else:
-        print("  - Detected PELE control file at " +
-              "{}".format(control_file.path))
-        pele_cf = PELEControlFile(control_file.path)
-        adaptive_cf = None
-
-    return adaptive_cf, pele_cf
-
-
-def identifyControlFileType(controlfile):
-    if "generalParams" in controlfile.data:
-        return "Adaptive"
-    else:
-        return "PELE"
-
-
 def removeAdaptiveSymbolsFromPELEControlFile(cf):
     data = ""
     for line in cf:

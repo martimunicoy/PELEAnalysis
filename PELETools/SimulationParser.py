@@ -9,10 +9,10 @@ import sys
 
 
 # PELE imports
-from PELETools.Molecules import atomBuilder
-from PELETools.Molecules import linkBuilder
-from PELETools.PDB import PDBHandler
-from PELETools.Utils import isThereAFile, fromDictValuesToList
+from .Molecules import atomBuilder
+from .Molecules import linkBuilder
+from .PDB import PDBHandler
+from .Utils import fromDictValuesToList
 
 
 # Script information
@@ -25,22 +25,38 @@ __email__ = "marti.municoy@bsc.es"
 
 # Classes
 class Simulation(object):
-    def __init__(self, directories, sim_type="PELE", report_name="run_report_",
-                 trajectory_name="run_trajectory_", logfile_name="logFile_",
-                 epochs=None, trajectories=None):
-        self.directories = directories
-        self.type = sim_type
-        self.report_name = report_name
-        self.trajectory_name = trajectory_name
-        self.logfile_name = logfile_name
-        self.epochs = epochs
-        self.trajectories = trajectories
+    def __init__(self, directories, report_name="report_",
+                 trajectory_name="trajectory_", logfile_name="logFile_"):
+        self._directories = directories
+        self._report_name = report_name
+        self._trajectory_name = trajectory_name
+        self._logfile_name = logfile_name
         self.reports = None
         self.iterateOverReports = None
-        self.PDBHandler = None
+        self.PDBHandler = PDBHandler(self)
 
-        if type(self.directories) is not list:
-            self.directories = [self.directories, ]
+        if (type(self.directories) is not list):
+            self._directories = [self.directories, ]
+
+    @property
+    def directories(self):
+        return self._directories
+
+    @property
+    def report_name(self):
+        return self._report_name
+
+    @property
+    def trajectory_name(self):
+        return self._trajectory_name
+
+    @property
+    def logfile_name(self):
+        return self._logfile_name
+
+    @property
+    def type(self):
+        return self._type
 
     def initiateCounters(self):
         if self.type is "Adaptive":
@@ -49,76 +65,33 @@ class Simulation(object):
         self.trajectories = 0
         self.models = 0
 
-    # TODO
     def getOutputFiles(self):
-        return self.scanForOutputFiles()
+        self._scanForOutputFiles()
+        self.iterateOverReports = self.reportIterator(self.reports)
 
-    def scanForOutputFiles(self):
-        self.initiateCounters()
-        self.reports = {}
-
-        if self.type is "Adaptive":
-            for directory in self.directories:
-                for subdir in glob.glob(directory + "*"):
-                    subdir = os.path.basename(subdir)
-                    if subdir.isdigit():
-                        self._getOutputFilesHere(directory + subdir)
-            print("  - A total of {} epochs and ".format(self.epochs) +
-                  "{} reports were found.".format(self.trajectories))
-
-        elif self.type is "PELE":
-            for directory in self.directories:
-                self._getOutputFilesHere(directory)
-            print("  - A total of {}".format(self.trajectories) +
-                  " reports were found.")
-
+    def _getOutputFilesHere(self, directory, epoch=None):
+        path_to_reports = directory
+        if (epoch is not None):
+            path_to_reports += str(epoch) + "/"
         else:
-            print("Wrong Simulation type")
-            sys.exit(1)
+            path_to_reports += '/'
 
-        if self.epochs == 0 or self.epochs is None:
-            trajectories_per_epoch = self.trajectories
-        else:
-            trajectories_per_epoch = self.trajectories / self.epochs
-
-        self.iterateOverReports = self.reportIterator(self.reports,
-                                                      trajectories_per_epoch)
-
-        trajectory = self[0].trajectory
-        self.PDBHandler = PDBHandler(trajectory)
-
-    def _getOutputFilesHere(self, directory):
-        if self.type is "Adaptive":
-            self.epochs += 1
-            epoch = int(os.path.basename(directory))
-
-        else:
-            epoch = None
-
-        self.reports[directory] = []
-
-        for file in glob.glob(directory + "/" + self.report_name + "*"):
-            report = Report(directory, os.path.basename(file),
-                            self.report_name, epoch=epoch)
+        for file in glob.glob(path_to_reports + '/' + self.report_name + "*"):
+            report = Report(path_to_reports, os.path.basename(file),
+                            self.report_name, self.PDBHandler, epoch=epoch)
             report.setTrajectoryFile(self.trajectory_name)
             report.setLogFile(self.logfile_name)
 
-            self.reports[directory].append(report)
+            self.reports[directory][str(epoch)].append(report)
             self.trajectories += 1
-
-    def __getitem__(self, key):
-        for i, report in enumerate(self.iterateOverReports):
-            if (i == key):
-                return report
-        raise IndexError
 
     class reportIterator:
         def __init__(self, reports):
             self.reports = fromDictValuesToList(reports)
-            self.current_index = 0
             self.max_len = len(self.reports)
 
         def __iter__(self):
+            self.current_index = 0
             return self
 
         def __next__(self):
@@ -128,52 +101,45 @@ class Simulation(object):
                 self.current_index += 1
                 return self.reports[self.current_index - 1]
 
+        def __getitem__(self, key):
+            for i, report in enumerate(self.reports):
+                if (i == key):
+                    return report
+            raise IndexError
+
 
 class AdaptiveSimulation(Simulation):
     def __init__(self, directories, report_name="run_report_",
-                 trajectory_name="run_trajectory_", logfile_name="logFile_",
-                 epochs=None, trajectories=None):
-        self.directories = directories
-        self.type = "Adaptive"
-        self.report_name = report_name
-        self.trajectory_name = trajectory_name
-        self.logfile_name = logfile_name
-        self.epochs = epochs
-        self.trajectories = trajectories
-        self.reports = None
-        self.iterateOverReports = None
-        self.PDBHandler = PDBHandler(self)
+                 trajectory_name="run_trajectory_", logfile_name="logFile_"):
+        self._type = "Adaptive"
+        Simulation.__init__(self, directories, report_name, trajectory_name,
+                            logfile_name)
 
-        if (type(self.directories) is not list):
-            self.directories = [self.directories, ]
+    def _scanForOutputFiles(self):
+        self.initiateCounters()
+        self.reports = {}
 
-    def getOutputFiles(self):
-        if (self.epochs is None or self.trajectories is None):
-            self.scanForOutputFiles()
-        else:
-            self.reports = {}
-            for directory in self.directories:
-                self.reports[directory] = {}
-                for epoch in range(0, self.epochs):
-                    self.reports[directory][epoch] = []
-                    for report_file in [self.report_name + str(i)
-                                        for i in range(1, self.trajectories)]:
-                        path = directory + str(epoch) + '/' + report_file
-                        if (not isThereAFile(path)):
-                            print("AdaptiveSimulation:getOutputFiles: " +
-                                  "Warning, file: {} ". format(path) +
-                                  "not found")
-                        else:
-                            report = Report(directory + str(epoch),
-                                            report_file, self.report_name,
-                                            epoch, PDBHandler=self.PDBHandler)
-                            report.setTrajectoryFile(self.trajectory_name)
-                            report.setLogFile(self.logfile_name)
-                            self.reports[directory][epoch].append(report)
+        for directory in self.directories:
+            self.reports[directory] = {}
+            for subdir in glob.glob(directory + "*"):
+                subdir = os.path.basename(subdir)
+                if (subdir.isdigit()):
+                    self.epochs += 1
+                    self.reports[directory][subdir] = []
+                    self._getOutputFilesHere(
+                        directory, epoch=int(subdir))
+        print("  - A total of {} epochs and ".format(self.epochs) +
+              "{} reports were found.".format(self.trajectories))
 
-        self.iterateOverReports = self.reportIterator(self.reports)
 
-    def scanForOutputFiles(self):
+class PELESimulation(Simulation):
+    def __init__(self, directories, report_name="run_report_",
+                 trajectory_name="run_trajectory_", logfile_name="logFile_"):
+        self._type = "PELE"
+        Simulation.__init__(self, directories, report_name, trajectory_name,
+                            logfile_name)
+
+    def _scanForOutputFiles(self):
         self.initiateCounters()
         self.reports = {}
 
@@ -184,30 +150,16 @@ class AdaptiveSimulation(Simulation):
                 if (subdir.isdigit()):
                     self.reports[directory][subdir] = []
                     self._getOutputFilesHere(directory + subdir)
-        print("  - A total of {} epochs and ".format(self.epochs) +
-              "{} reports were found.".format(self.trajectories))
-
-    def _getOutputFilesHere(self, directory):
-        self.epochs += 1
-        epoch = int(os.path.basename(directory))
-
-        for file in glob.glob(directory + "/" + self.report_name + "*"):
-            report = Report(directory, os.path.basename(file),
-                            self.report_name, epoch=epoch)
-            report.setTrajectoryFile(self.trajectory_name)
-            report.setLogFile(self.logfile_name)
-
-            self.reports[directory][epoch].append(report)
-            self.trajectories += 1
+        print("  - A total of {} reports were found.".format(
+            self.trajectories))
 
 
 class Report:
-
-    def __init__(self, path, name, report_name, epoch=None, PDBHandler=None):
+    def __init__(self, path, name, report_name, PDBHandler, epoch=None):
         self.path = path
         self.name = name
         self.epoch = epoch
-        self.trajectory_id = int(name.split(report_name)[1].split('.')[-1])
+        self.trajectory_id = int(name.split(report_name)[1].split('.')[0])
         self.trajectory = None
         self.logfile = None
         self.metrics, self.models = self.getReportInfo()
@@ -249,7 +201,7 @@ class Report:
             sys.exit(1)
 
         elif col_num is None:
-            col_num = self.metrics[metric_name]
+            col_num = self.metrics[metric_name] + 1
 
         metric_values = []
 
@@ -299,12 +251,11 @@ class Trajectory:
         self.epoch = epoch
         self.trajectory_id = trajectory_id
         self.models = models
-        self.PDBHandler = self.report_file.PDBHandler
+        self.PDBHandler = None
+        if (self.report_file is not None):
+            self.PDBHandler = self.report_file.PDBHandler
 
     def isAtomThere(self, atom_data):
-        if (self.PDBHandler.system_size is None):
-            self.PDBHandler.system_size = self.PDBHandler.getSystemSize()
-
         _, _, atom_name = atom_data
         atom_name = atom_name.replace("_", " ")
         atom_data[2] = atom_name
@@ -313,29 +264,27 @@ class Trajectory:
             for i, line in enumerate(trajectory_file):
                 if (containsAtom(line, atom_data)):
                     return True
-                if (i > self.PDBHandler.system_size):
-                    break
+                if (self.PDBHandler is not None):
+                    if (i > self.PDBHandler.system_size):
+                        break
 
         return False
 
     def getAtoms(self, atom_data):
-        if self.PDBHandler is None:
-            self.PDBHandler = self.getSystemSize()
-
         _, _, atom_name = atom_data
         atom_name = atom_name.replace("_", " ")
         atom_data[2] = atom_name
 
-        if ((self.report_file.PDBHandler is not None) and
-                (self.report_file.PDBHandler.are_atoms_indexed)):
+        if ((self.PDBHandler is not None) and
+                (self.PDBHandler.are_atoms_indexed)):
             return self._getAtomsFromIndexedAtoms(atom_data)
-        else:
-            return self._getAtomsFromNonIndexedAtoms(atom_data)
+
+        return self._getAtomsFromNonIndexedAtoms(atom_data)
 
     def _getAtomsFromIndexedAtoms(self, atom_data):
         list_of_atoms = []
         model = 0
-        atom_line = self.report_file.PDBHandler.getAtomLineInPDB(atom_data)
+        atom_line = self.PDBHandler.getAtomLineInPDB(atom_data)
 
         with open(self.path + "/" + self.name) as trajectory_file:
 
@@ -349,24 +298,18 @@ class Trajectory:
                 current_line = i - (self.PDBHandler.system_size + 1) * model
 
                 if (current_line == atom_line):
-                    list_of_atoms.append(atomBuilder(line, self, model))
+                    list_of_atoms.append(atomBuilder(line))
 
         return list_of_atoms
 
+    # Not tested yet
     def _getAtomsFromNonIndexedAtoms(self, atom_data):
         list_of_atoms = []
-        model = 0
 
         with open(self.path + "/" + self.name) as trajectory_file:
-            for i, line in enumerate(trajectory_file):
-                if (int(i / (self.PDBHandler.system_size + 1)) != model):
-                    model += 1
-
-                if not self.models.active[model]:
-                    continue
-
+            for line in trajectory_file:
                 if containsAtom(line, atom_data):
-                    list_of_atoms.append(atomBuilder(line, self, 1))
+                    list_of_atoms.append(atomBuilder(line))
 
         return list_of_atoms
 
@@ -375,36 +318,35 @@ class Trajectory:
             self.PDBHandler.system_size = self.PDBHandler.getSystemSize()
 
         with open(self.path + "/" + self.name) as trajectory_file:
-            for i, line in enumerate(trajectory_file):
-                if (containsLink(line, link_data)):
-                    return True
-                if (i > self.PDBHandler.system_size):
-                    break
+            if (self.PDBHandler is not None):
+                for i, line in enumerate(trajectory_file):
+                    if (containsLink(line, link_data)):
+                        return True
+                    if (i > self.PDBHandler.system_size):
+                        break
 
         return False
 
     def getLinks(self, link_data):
-        if self.PDBHandler is None:
-            self.PDBHandler = self.getSystemSize()
-
-        if ((self.report_file.PDBHandler is not None) and
-                (self.report_file.PDBHandler.are_atoms_indexed)):
+        if ((self.PDBHandler is not None) and
+                (self.PDBHandler.are_atoms_indexed)):
             return self._getLinksFromIndexedAtoms(link_data)
-        else:
-            return self._getLinksFromNonIndexedAtoms(link_data)
+
+        return self._getLinksFromNonIndexedAtoms(link_data)
 
     def _getLinksFromIndexedAtoms(self, link_data):
         links_list = []
         lines = \
-            self.report_file.PDBHandler.getLinkLinesInPDB(link_data).values()
+            self.PDBHandler.getLinkLinesInPDB(link_data).values()
 
         with open(self.path + "/" + self.name) as trajectory_file:
             list_of_atoms = []
             model = 0
             for i, line in enumerate(trajectory_file):
-                if (int(i / (self.PDBHandler.system_size + 1)) != model):
-                    links_list.append(linkBuilder(list_of_atoms))
-                    list_of_atoms = []
+                if (self.PDBHandler.currentModel(i) != model):
+                    if self.models.active[model]:
+                        links_list.append(linkBuilder(list_of_atoms))
+                        list_of_atoms = []
                     model += 1
 
                 if (not self.models.active[model]):
@@ -413,7 +355,7 @@ class Trajectory:
                 current_line = i - (self.PDBHandler.system_size + 1) * model
 
                 if (current_line in lines):
-                    list_of_atoms.append(atomBuilder(line, self, model))
+                    list_of_atoms.append(atomBuilder(line))
 
         links_list.append(linkBuilder(list_of_atoms))
 
@@ -426,28 +368,47 @@ class Trajectory:
             list_of_atoms = []
             model = 0
             for i, line in enumerate(trajectory_file):
-                if (int(i / (self.PDBHandler.system_size + 1)) != model):
-                    links_list.append(linkBuilder(list_of_atoms))
-                    list_of_atoms = []
+                if (self.PDBHandler.currentModel(i) != model):
+                    if self.models.active[model]:
+                        links_list.append(linkBuilder(list_of_atoms))
+                        list_of_atoms = []
                     model += 1
 
                 if not self.models.active[model]:
                     continue
 
                 if containsLink(line, link_data):
-                    atom = atomBuilder(line, self, 1)
+                    atom = atomBuilder(line)
                     list_of_atoms.append(atom)
+
+        links_list.append(linkBuilder(list_of_atoms))
 
         return links_list
 
     def goToNextModelLine(self, file):
-        for i in range(0, self.system_size):
+        for i in range(0, self.PDBHandler.getSystemSize()):
             file.readline()
         return file.readline()
 
+    def writeModel(self, model_id, output_path):
+        model_out = ""
+        with open(self.path + "/" + self.name) as trajectory_file:
+            i = int(0)
+            line = trajectory_file.readline()
+            while(i != int(model_id)):
+                line = self.goToNextModelLine(trajectory_file)
+                i += 1
+
+            model_out += line
+
+            for i in range(0, self.PDBHandler.getSystemSize()):
+                model_out += trajectory_file.readline()
+
+        with open(output_path, 'w') as output_file:
+            output_file.write(model_out)
+
 
 class Logfile:
-
     def __init__(self, name, path, report_file, epoch, trajectory_id):
         self.name = name
         self.path = path
@@ -582,9 +543,6 @@ def simulationBuilderFromAdaptiveCF(adaptive_cf, pele_cf=None):
     simulation_dir = os.path.dirname(adaptive_cf.path) + '/' + \
         adaptive_cf.data["generalParams"]["outputPath"] + '/'
 
-    epochs = adaptive_cf.data["simulation"]["params"]["iterations"]
-    trajectories = adaptive_cf.data["simulation"]["params"]["processors"]
-
     report_name = None
     trajectory_name = None
     logfile_name = None
@@ -600,12 +558,10 @@ def simulationBuilderFromAdaptiveCF(adaptive_cf, pele_cf=None):
         logfile_name = pele_cf.data["simulationLogPath"]
         logfile_name = logfile_name.split('/')[-1].split('.')[0] + '_'
 
-    simulation = AdaptiveSimulation(simulation_dir, epochs=epochs,
-                                    trajectories=trajectories,
+    simulation = AdaptiveSimulation(simulation_dir,
                                     report_name=report_name,
                                     trajectory_name=trajectory_name,
                                     logfile_name=logfile_name)
     simulation.getOutputFiles()
 
     return simulation
-
