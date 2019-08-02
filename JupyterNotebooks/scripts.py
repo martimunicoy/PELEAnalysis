@@ -17,6 +17,9 @@ def obtain_water_data_from(control_file_path, number_of_processors,
     list_of_reports = []
     for report in sim.iterateOverReports:
         list_of_reports.append(report)
+       
+    if (len(water_simulation_ids) == 0):
+        return (None, None, None, None), list_of_reports
 
     print('- Retrieving data...')
     parallel_function = partial(parallel_atom_getter, water_simulation_ids,
