@@ -130,11 +130,11 @@ def get_ordered_matchs(list_of_reports, matchs_dict, reference_matchs,
     return matchs
 
 
-def add_matchs_to_reports(list_of_reports, matchs):
+def add_matchs_to_reports(list_of_reports, matchs, first_atoms_to_ignore):
     index = 0
     for report in list_of_reports:
-        matchs_to_add = [0, ]
-        for model in range(1, report.trajectory.models.number):
+        matchs_to_add = [0, ] * first_atoms_to_ignore
+        for model in range(first_atoms_to_ignore, report.trajectory.models.number):
             matchs_to_add.append(matchs[index])
             index += 1
         report.addMetric('WaterMatchs', matchs_to_add)
@@ -204,14 +204,3 @@ def write_centroids(estimator, densities=None, output_name='centroid.pdb',
     with open(output_name, 'w') as f:
         for i, centroid in enumerate(centroids):
             writer(f, i, centroid, norm_densities[i])
-
-
-def add_metrics_to_reports(matchs_dict, first_atoms_to_ignore,
-                           reference_clusters):
-    for report, matchs_per_model in matchs_dict.items():
-        report_metrics = [0, ] * first_atoms_to_ignore
-        for (model, matchs) in sorted(matchs_per_model.items()):
-            report_metrics.append(fulfill_condition(matchs,
-                                                    reference_clusters))
-
-        report.addMetric('waterMatchs', report_metrics)
