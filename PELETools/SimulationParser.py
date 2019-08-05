@@ -69,22 +69,6 @@ class Simulation(object):
         self._scanForOutputFiles()
         self.iterateOverReports = self.reportIterator(self.reports)
 
-    def _getOutputFilesHere(self, directory, epoch=None):
-        path_to_reports = directory
-        if (epoch is not None):
-            path_to_reports += str(epoch) + "/"
-        else:
-            path_to_reports += '/'
-
-        for file in glob.glob(path_to_reports + '/' + self.report_name + "*"):
-            report = Report(path_to_reports, os.path.basename(file),
-                            self.report_name, self.PDBHandler, epoch=epoch)
-            report.setTrajectoryFile(self.trajectory_name)
-            report.setLogFile(self.logfile_name)
-
-            self.reports[directory][str(epoch)].append(report)
-            self.trajectories += 1
-
     class reportIterator:
         def __init__(self, reports):
             self.reports = fromDictValuesToList(reports)
@@ -131,6 +115,18 @@ class AdaptiveSimulation(Simulation):
         print("  - A total of {} epochs and ".format(self.epochs) +
               "{} reports were found.".format(self.trajectories))
 
+    def _getOutputFilesHere(self, directory, epoch=None):
+        path_to_reports = directory + str(epoch) + '/'
+
+        for file in glob.glob(path_to_reports + '/' + self.report_name + "*"):
+            report = Report(path_to_reports, os.path.basename(file),
+                            self.report_name, self.PDBHandler, epoch=epoch)
+            report.setTrajectoryFile(self.trajectory_name)
+            report.setLogFile(self.logfile_name)
+
+            self.reports[directory][str(epoch)].append(report)
+            self.trajectories += 1
+
 
 class PELESimulation(Simulation):
     def __init__(self, directories, report_name="run_report_",
@@ -145,13 +141,23 @@ class PELESimulation(Simulation):
 
         for directory in self.directories:
             self.reports[directory] = {}
-            for subdir in glob.glob(directory + "*"):
-                subdir = os.path.basename(subdir)
-                if (subdir.isdigit()):
-                    self.reports[directory][subdir] = []
-                    self._getOutputFilesHere(directory + subdir)
+            self.reports[directory][None] = []
+            self._getOutputFilesHere(directory)
+
         print("  - A total of {} reports were found.".format(
             self.trajectories))
+
+    def _getOutputFilesHere(self, directory):
+        path_to_reports = directory
+
+        for file in glob.glob(path_to_reports + '/' + self.report_name + "*"):
+            report = Report(path_to_reports, os.path.basename(file),
+                            self.report_name, self.PDBHandler)
+            report.setTrajectoryFile(self.trajectory_name)
+            report.setLogFile(self.logfile_name)
+
+            self.reports[directory][None].append(report)
+            self.trajectories += 1
 
 
 class Report:
@@ -562,6 +568,27 @@ def simulationBuilderFromAdaptiveCF(adaptive_cf, pele_cf=None):
                                     report_name=report_name,
                                     trajectory_name=trajectory_name,
                                     logfile_name=logfile_name)
+    simulation.getOutputFiles()
+
+    return simulation
+
+
+def simulationBuilderFromPELECF(pele_cf):
+    for command in pele_cf.data["commands"]:
+        if command["commandType"] == "peleSimulation":
+            simulation_dir = os.path.dirname(pele_cf.path) + '/' + '/'.join(
+                command["PELE_Output"]["reportPath"].split('/')[:-1])
+            report_name = command["PELE_Output"]["reportPath"]
+            report_name = report_name.split('/')[-1] + '_'
+            trajectory_name = command["PELE_Output"]["trajectoryPath"]
+            trajectory_name = trajectory_name.split('/')[-1]
+            trajectory_name = trajectory_name.split('.')[0] + '_'
+        logfile_name = pele_cf.data["simulationLogPath"]
+
+    simulation = PELESimulation(simulation_dir,
+                                report_name=report_name,
+                                trajectory_name=trajectory_name,
+                                logfile_name=logfile_name)
     simulation.getOutputFiles()
 
     return simulation

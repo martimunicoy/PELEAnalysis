@@ -8,6 +8,7 @@ import json
 
 # PELE imports
 from .SimulationParser import simulationBuilderFromAdaptiveCF
+from .SimulationParser import simulationBuilderFromPELECF
 from .Utils import isThereAFile
 
 
@@ -41,7 +42,7 @@ class ControlFileBuilder(object):
 
         except FileNotFoundError:
             raise NameError("Invalid control file path: \'{}\'".format(
-                self.path))
+                self._path_to_report))
 
     def _identifyControlFileType(self, data):
         if ('generalParams' in data):
@@ -115,8 +116,8 @@ class PELEControlFile(ControlFile):
         return PDBs
 
     def getSimulation(self):
-        print("PELEControlFile:getSimulation: not implemented yet")
-        return None
+        simulation = simulationBuilderFromPELECF(self)
+        return simulation
 
 
 # Functions
