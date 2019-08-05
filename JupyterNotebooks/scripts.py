@@ -175,10 +175,10 @@ def write_centroids(estimator, densities=None, output_name='centroid.pdb',
                     normalize=False):
     # Writer functions
     def single_write(f, i, centroid, density=None):
-        f.write("ATOM    {:3d}  CEN BOX A   1 {:>11.3f}{:>8.3f}{:>8.3f}  1.00  0.00\n".format(i, *centroid))
+        f.write("ATOM    {:3d}  CEN BOX A {:3d} {:>11.3f}{:>8.3f}{:>8.3f}  1.00  0.00\n".format(i, i, *centroid))
 
     def density_write(f, i, centroid, density):
-        f.write("ATOM    {:3d}  CEN BOX A   1 {:>11.3f}{:>8.3f}{:>8.3f}  1.00{:>5.2f}\n".format(i, *centroid, density))
+        f.write("ATOM    {:3d}  CEN BOX A {:3d} {:>11.3f}{:>8.3f}{:>8.3f}  1.00{:>5.2f}\n".format(i, i, *centroid, density))
 
     # Get centroids and number of clusters
     centroids = estimator.cluster_centers_
@@ -203,4 +203,4 @@ def write_centroids(estimator, densities=None, output_name='centroid.pdb',
     n_clusters = len(centroids)
     with open(output_name, 'w') as f:
         for i, centroid in enumerate(centroids):
-            writer(f, i, centroid, norm_densities[i])
+            writer(f, i + 1, centroid, norm_densities[i])
