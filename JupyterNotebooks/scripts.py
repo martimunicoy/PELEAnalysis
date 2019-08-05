@@ -140,15 +140,16 @@ def add_matchs_to_reports(list_of_reports, matchs, first_atoms_to_ignore):
         report.addMetric('WaterMatchs', matchs_to_add)
 
 
-def get_matchs(results, atom_reports, atom_models, first_atoms_to_ignore):
+def get_matchs(list_of_reports, results, atom_reports, atom_models,
+               first_atoms_to_ignore):
     matchs = {}
 
     # Initialize matchs_dict
-    for atom_report in atom_reports:
-        matchs[atom_report] = {}
+    for report in list_of_reports:
+        matchs[report] = {}
         for model in range(first_atoms_to_ignore,
-                           atom_report.trajectory.models.number):
-            matchs[atom_report][model] = []
+                           report.trajectory.models.number):
+            matchs[report][model] = []
 
     for i, cluster_id in enumerate(results):
         matchs[atom_reports[i]][atom_models[i]].append(cluster_id)
