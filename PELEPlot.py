@@ -19,7 +19,7 @@ __email__ = "marti.municoy@bsc.es"
 
 
 # Functions
-def parseReports(reports_to_parse, parser):
+def parseReports(reports_to_parse, parser=None):
     """It identifies the reports to add to the plot
 
     PARAMETERS
@@ -46,10 +46,11 @@ def parseReports(reports_to_parse, parser):
         for report in glob.glob(reports_list):
             reports.append(report)
 
-    if len(reports) == 0:
-        print "Error: list of report files is empty."
-        parser.print_help()
-        exit(1)
+    if (parser is not None):
+        if len(reports) == 0:
+            print("Error: list of report files is empty.")
+            parser.print_help()
+            exit(1)
 
     return reports
 
@@ -283,7 +284,7 @@ def scatterPlot(reports,
                                    "Model: " + str(i + 1))
 
                 labels.append(0)
-
+    
     if z_max is None:
         z_max = max(z_values)
 
