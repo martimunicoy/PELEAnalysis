@@ -40,12 +40,12 @@ class Plot(object):
         """
 
         # Set default x and y axis
-        if (None in self.x_rows):
-            self.x_cols = [2, ]
-            self.x_name = "Pele step"
-        if (None in self.y_rows):
-            self.y_cols = [5, ]
-            self.y_name = "Interaction energy ($kcal/mol$)"
+        if (None in x_cols):
+            x_cols = [2, ]
+            x_name = "Pele step"
+        if (None in y_cols):
+            y_cols = [5, ]
+            y_name = "Interaction energy ($kcal/mol$)"
 
         # Set plot axes
         self.axes = {'x': Axis(x_cols, x_name),
@@ -60,8 +60,8 @@ class Plot(object):
 
         # Set axis names
         for axis in self.axes.values():
-            if (axis.axis_name is None):
-                self.x_axis.set_axis_name_from_report(reports[0])
+            if (axis.name is None):
+                axis.set_axis_name_from_report(reports[0])
 
         # Set axes values
         for rp in reports:
@@ -72,22 +72,22 @@ class Plot(object):
                 next(rf)
                 for i, line in enumerate(rf):
                     for axis in self.axes.values():
-                        if (axis.axis_columns is None):
+                        if (axis.columns is None):
                             continue
 
                         total = 0.
-                        for col in axis.axis_columns:
+                        for col in axis.columns:
                             try:
                                 total += float(line.split()[col - 1])
                             except TypeError:
                                 total = nan
 
-                    if (isnan(total)):
-                        print('Warning: incorrect data found at report ' +
-                              '{}, line {}'.format(rp, i))
-                        continue
+                        if (isnan(total)):
+                            print('Warning: incorrect data found at report ' +
+                                  '{}, line {}'.format(rp, i))
+                            continue
 
-                    axis.add_value(total)
+                        axis.add_value(total)
 
                     epoch = report_directory.split('/')[-1]
                     if (not epoch.isdigit()):
@@ -98,13 +98,12 @@ class Plot(object):
                         "Trajectory: " + report_number + "\n" +
                         "Model: " + str(i + 1))
 
-                    # labels.append(0)
+        if (self.axes['z'].values is not None):
+            if (z_max is None):
+                self.z_max = max(self.axes['z'].values)
 
-        if (z_max is None):
-            self.z_max = max(self.axes['z'].values)
-
-        if (z_min is None):
-            self.z_min = min(self.axes['z'].values)
+            if (z_min is None):
+                self.z_min = min(self.axes['z'].values)
 
 
 class Axis(object):
@@ -123,18 +122,25 @@ class Axis(object):
         axis_name : string
                     axis name
         """
-        self.axis_columns = axis_columns
-        self.axis_name = self._add_units(axis_name)
+        self._columns = axis_columns
+        self.name = self._add_units(axis_name)
         self._values = []
 
     @property
+    def columns(self):
+        if (None in self._columns):
+            return None
+
+        return self._columns
+
+    @property
     def values(self):
-        if (len(self.values) == 0):
+        if (len(self._values) == 0):
             return None
 
         return self._values
 
-    def _add_units(metric_name):
+    def _add_units(self, metric_name):
         """Add units according to the input metric
 
         PARAMETERS
@@ -147,6 +153,9 @@ class Axis(object):
         label : string
                 name of the metric to plot with the units that were added to it
         """
+
+        if (metric_name is None):
+            return
 
         if ("energy" in metric_name.lower()):
             label = metric_name + " ($kcal/mol$)"
@@ -170,9 +179,12 @@ class Axis(object):
                  path to PELE report from where to extract axis name
 
         """
+        if (self.columns is None):
+            return
+
         with open(report, 'r') as report_file:
             line = report_file.readline()
-            self.axis_name = str(line.split("    ")[self.axis_columns[0] - 1])
+            self.name = str(line.split("    ")[self.columns[0] - 1])
 
     def clear_values(self):
         """It clears the values list of the axis
@@ -228,13 +240,36 @@ class ScatterPlot(Plot):
         super().__init__(reports, x_cols, y_cols, z_cols, x_name, y_name,
                          z_name, output_path, z_max, z_min)
 
+        self.set_colormap('autumn')
+
+    def set_colormap(self, colormap):
+        """Set colormap of the plot
+
+        PARAMETERS
+        ----------
+        colormap : string
+                   name of the colormap to set
+        """
+        if (colormap == 'plasma'):
+            self.cmap = plt.cm.plasma
+        elif (colormap == 'autumn'):
+            self.cmap = plt.cm.autumn
+        elif (colormap == 'winter'):
+            self.cmap = plt.cm.winter
+        elif (colormap == 'spring'):
+            self.cmap = plt.cm.spring
+        elif (colormap == 'summer'):
+            self.cmap = plt.cm.summer
+        else:
+            raise NameError('Unknown colormap name: \'{}\''.format(colormap))
+
     def show(self):
         """Display plot"""
         self._plot_builder()
         plt.show()
 
     def save_to(self, path):
-        """Saves the plot to a path
+        """Save the plot to a path
 
         PARAMETERS
         ----------
@@ -246,25 +281,24 @@ class ScatterPlot(Plot):
 
     def _plot_builder(self):
         """Build the plot"""
-
-        if (self.z_min == self.z_max):
-            cmap = plt.cm.autumn
-        else:
-            cmap = plt.cm.plasma
-
         norm = plt.Normalize(self.z_min, self.z_max)
 
         fig, ax = plt.subplots()
 
+        if (self.axes['z'].values is None):
+            colors = [0 for i in range(0, len(self.axes['x'].values))]
+        else:
+            colors = self.axes['z'].values
+
         sc = plt.scatter(self.axes['x'].values,
                          self.axes['y'].values,
-                         c=self.axes['z'].values,
-                         cmap=cmap, norm=norm)
+                         c=colors,
+                         cmap=self.cmap, norm=norm)
 
         ax.margins(0.05)
         ax.set_facecolor('lightgray')
-        plt.xlabel(self.axes['x'].axis_name)
-        plt.ylabel(self.axes['y'].axis_name)
+        plt.xlabel(self.axes['x'].name)
+        plt.ylabel(self.axes['y'].name)
 
         annot = ax.annotate("", xy=(0, 0), xytext=(20, 20),
                             textcoords="offset points",
@@ -275,7 +309,7 @@ class ScatterPlot(Plot):
         # Activate the colorbar only if the Z axis contains data to plot
         if (self.axes['z'].values is not None):
             cbar = plt.colorbar(sc, drawedges=False)
-            cbar.ax.set_ylabel(self.axes['z'].axis_name)
+            cbar.ax.set_ylabel(self.axes['z'].name)
 
         def update_annot(ind):
             """Update the information box of the selected point"""
@@ -283,7 +317,7 @@ class ScatterPlot(Plot):
             annot.xy = pos
             annot.set_text(self.annotations[int(ind["ind"][0])])
             if (self.axes['z'].values is not None):
-                annot.get_bbox_patch().set_facecolor(cmap(norm(
+                annot.get_bbox_patch().set_facecolor(self.cmap(norm(
                     self.axes['z'].values[ind["ind"][0]])))
 
         def hover(event):
@@ -302,6 +336,3 @@ class ScatterPlot(Plot):
 
         # Respond to mouse motion
         fig.canvas.mpl_connect("motion_notify_event", hover)
-
-        # Save or display the plot depending on whether an output path was set or
-        # not
