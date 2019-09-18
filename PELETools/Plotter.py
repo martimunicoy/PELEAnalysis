@@ -549,10 +549,32 @@ class JointPlot(Plot):
                                      as_cmap=True)
 
         # Handle axes limits
-        self.x_axis_limits = None
-        self.y_axis_limits = None
+        self._x_axis_limits = None
+        self._y_axis_limits = None
+
+        # Number of levels to plot
+        self._n_levels = 5
+
+    @property
+    def x_axis_limits(self):
+        return self._x_axis_limits
+
+    @property
+    def y_axis_limits(self):
+        return self._y_axis_limits
+
+    @property
+    def n_levels(self):
+        return self._n_levels
 
     def set_colormap(self, colormap):
+        """Sets colormap
+
+        PARAMETERS
+        ----------
+        colormap : string
+                   name of the colormap
+        """
         if (colormap in self.colors.keys()):
             self.color = colormap
         else:
@@ -566,25 +588,46 @@ class JointPlot(Plot):
         limits : tuple of floats
                  axis limits
         """
-        if (type(limits) != list and type(limits) != tuple):
-            raise TypeError('Wrong limits format: \'{}\''.format(limits))
-            if (len(limits != 2)):
+        if (limits is not None):
+            if (type(limits) != list and type(limits) != tuple):
                 raise TypeError('Wrong limits format: \'{}\''.format(limits))
-        self.x_axis_limits = limits
+                if (len(limits != 2)):
+                    raise TypeError('Wrong limits format: ' +
+                                    '\'{}\''.format(limits))
+        self._x_axis_limits = limits
 
     def set_y_axis_limits(self, limits):
-        """Sets x axis limits
+        """Sets y axis limits
 
         PARAMETERS
         ----------
         limits : tuple of floats
                  axis limits
         """
-        if (type(limits) != list and type(limits) != tuple):
-            raise TypeError('Wrong limits format: \'{}\''.format(limits))
-            if (len(limits != 2)):
+        if (limits is not None):
+            if (type(limits) != list and type(limits) != tuple):
                 raise TypeError('Wrong limits format: \'{}\''.format(limits))
-        self.y_axis_limits = limits
+                if (len(limits != 2)):
+                    raise TypeError('Wrong limits format: ' +
+                                    '\'{}\''.format(limits))
+        self._y_axis_limits = limits
+
+    def set_n_levels(self, levels):
+        """Sets number of levels to plot
+
+        PARAMETERS
+        ----------
+        levels : integer
+                 number of levels to plot
+        """
+        if (levels is not None):
+            if (type(levels) != int):
+                raise TypeError('Wrong number of levels: ' +
+                                '\'{}\''.format(levels))
+                if (levels < 1):
+                    raise TypeError('Wrong number of levels: ' +
+                                    '\'{}\''.format(levels))
+        self._n_levels = levels
 
     def show(self):
         """Display plot"""
@@ -605,13 +648,13 @@ class JointPlot(Plot):
     def _plot_builder(self):
         ax = sns.jointplot(x=self.axes['x'].values, y=self.axes['y'].values,
                            color=self.colors[self.color][0],
-                           kind='kde', cmap=self.cmap, shade=False)
+                           kind='kde', cmap=self.cmap, shade=False, n_levels=self.n_levels)
 
         ax.plot_joint(sns.scatterplot, color=self.colors[self.color][0],
                       edgecolor=self.colors[self.color][1], marker='o',
                       alpha=0.4)
         ax.plot_joint(sns.kdeplot, shade=False, shade_lowest=False,
-                      cmap=self.cmap)
+                      cmap=self.cmap, n_levels=self.n_levels)
 
         if (self.x_axis_limits is not None):
             ax.ax_marg_x.set_xlim(self.x_axis_limits[0], self.x_axis_limits[1])
