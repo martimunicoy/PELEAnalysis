@@ -4,6 +4,9 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 
 
+PLOT_TYPES = ('ScatterPlot', 'InteractiveScatterPlot', 'DensityPlot', 'JointPlot')
+
+
 class Plot(object):
     """Parent class that defines all basic parameters used in a PELE plot"""
 
@@ -305,7 +308,6 @@ class ScatterPlot(Plot):
         if (self.axes['z'].values is not None):
             cbar = plt.colorbar(sc, drawedges=False)
             cbar.ax.set_ylabel(self.axes['z'].name)
-
 
 
 class InteractiveScatterPlot(Plot):
