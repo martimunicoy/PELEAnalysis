@@ -1,5 +1,5 @@
 import os
-from math import isnan
+from math import nan, isnan
 
 
 class Plot(object):
@@ -53,13 +53,57 @@ class Plot(object):
 
         # Set other plot attributes
         self.output_path = output_path
+        self.annotations = []
+        self.z_max = z_max
+        self.z_min = z_min
 
+        # Set axis names
         for axis in self.axes.values():
             if (axis.axis_name is None):
                 self.x_axis.set_axis_name_from_report(reports[0])
 
-        self.x_axis.get_values_from_reports(reports)
+        # Set axes values
+        for rp in reports:
+            report_directory = os.path.dirname(rp)
+            report_number = os.path.basename(rp).split('_')[-1].split('.')[0]
 
+            with open(rp, 'r') as rf:
+                next(rf)
+                for i, line in enumerate(rf):
+                    for axis in self.axes.values():
+                        if (axis.axis_columns is None):
+                            continue
+
+                        total = 0.
+                        for col in axis.axis_columns:
+                            try:
+                                total += float(line.split()[col - 1])
+                            except TypeError:
+                                total = nan
+
+                    if (isnan(total)):
+                        print('Warning: incorrect data found at report ' +
+                              '{}, line {}'.format(rp, i))
+                        continue
+
+                    axis.add_value(total)
+
+                    epoch = report_directory.split('/')[-1]
+                    if (not epoch.isdigit()):
+                        epoch = '0'
+
+                    self.annotations.append(
+                        "Epoch: " + epoch + "\n" +
+                        "Trajectory: " + report_number + "\n" +
+                        "Model: " + str(i + 1))
+
+                    # labels.append(0)
+
+        if (z_max is None):
+            self.z_max = max(self.axes['z'].values)
+
+        if (z_min is None):
+            self.z_min = min(self.axes['z'].values)
 
 
 class Axis(object):
@@ -69,7 +113,7 @@ class Axis(object):
 
         PARAMETERS
         ----------
-        axis_column : list of integers
+        axis_columns : list of integers
                       list of column indexes from where to gather data in the
                       report. Note that report indexes start at 1. Also note
                       that in case that multiple indexes are defined here, the
@@ -78,7 +122,7 @@ class Axis(object):
         axis_name : string
                     axis name
         """
-        self.axis_column = axis_columns
+        self.axis_columns = axis_columns
         self.axis_name = self._add_units(axis_name)
         self._values = []
 
@@ -123,9 +167,14 @@ class Axis(object):
         """
         with open(report, 'r') as report_file:
             line = report_file.readline()
-            self.axis_name = str(line.split("    ")[self.axis_column[0] - 1])
+            self.axis_name = str(line.split("    ")[self.axis_columns[0] - 1])
 
-    def set_values_from_reports(self, reports):
+    def clear_values(self):
+        """It clears the values list of the axis
+        """
+        self._values = []
+
+    def add_value(self, value):
         """Set axis name from report column info
 
         PARAMETERS
@@ -135,51 +184,8 @@ class Axis(object):
                   values
 
         """
-        self._values = []
+        self._values += values
 
-        for report in reports:
-            report_directory = os.path.dirname(report)
-            report_number = os.path.basename(report).split('_')[-1].split('.')[0]
-
-            with open(report, 'r') as report_file:
-                next(report_file)
-                for i, line in enumerate(report_file):
-                    x_total = 0.
-                    y_total = 0.
-                    z_total = 0.
-
-                    for x_row in x_rows:
-                        x_total += float(line.split()[x_row - 1])
-
-                    for y_row in y_rows:
-                        y_total += float(line.split()[y_row - 1])
-
-                    if None not in z_rows:
-                        for z_row in z_rows:
-                            z_total += float(line.split()[z_row - 1])
-
-                    if isnan(x_total) or isnan(y_total) or isnan(z_total):
-                        continue
-
-                    x_values.append(x_total)
-                    y_values.append(y_total)
-                    z_values.append(z_total)
-
-                    epoch = report_directory.split('/')[-1]
-                    if not epoch.isdigit():
-                        epoch = '0'
-
-                    annotations.append("Epoch: " + epoch + "\n" +
-                                       "Trajectory: " + report_number + "\n" +
-                                       "Model: " + str(i + 1))
-
-                    labels.append(0)
-        
-        if z_max is None:
-            z_max = max(z_values)
-
-        if z_min is None:
-            z_min = min(z_values)
 
 
 
