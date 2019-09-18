@@ -548,11 +548,43 @@ class JointPlot(Plot):
         self.cmap = sns.dark_palette(self.colors[self.color][1], reverse=True,
                                      as_cmap=True)
 
+        # Handle axes limits
+        self.x_axis_limits = None
+        self.y_axis_limits = None
+
     def set_colormap(self, colormap):
         if (colormap in self.colors.keys()):
             self.color = colormap
         else:
             raise NameError('Unknown colormap name: \'{}\''.format(colormap))
+
+    def set_x_axis_limits(self, limits):
+        """Sets x axis limits
+
+        PARAMETERS
+        ----------
+        limits : tuple of floats
+                 axis limits
+        """
+        if (type(limits) != list and type(limits) != tuple):
+            raise TypeError('Wrong limits format: \'{}\''.format(limits))
+            if (len(limits != 2)):
+                raise TypeError('Wrong limits format: \'{}\''.format(limits))
+        self.x_axis_limits = limits
+
+    def set_y_axis_limits(self, limits):
+        """Sets x axis limits
+
+        PARAMETERS
+        ----------
+        limits : tuple of floats
+                 axis limits
+        """
+        if (type(limits) != list and type(limits) != tuple):
+            raise TypeError('Wrong limits format: \'{}\''.format(limits))
+            if (len(limits != 2)):
+                raise TypeError('Wrong limits format: \'{}\''.format(limits))
+        self.y_axis_limits = limits
 
     def show(self):
         """Display plot"""
@@ -580,5 +612,11 @@ class JointPlot(Plot):
                       alpha=0.4)
         ax.plot_joint(sns.kdeplot, shade=False, shade_lowest=False,
                       cmap=self.cmap)
+
+        if (self.x_axis_limits is not None):
+            ax.ax_marg_x.set_xlim(self.x_axis_limits[0], self.x_axis_limits[1])
+
+        if (self.y_axis_limits is not None):
+            ax.ax_marg_y.set_ylim(self.y_axis_limits[0], self.y_axis_limits[1])
 
         ax.set_axis_labels(self.axes['x'].name, self.axes['y'].name, fontsize=16)
