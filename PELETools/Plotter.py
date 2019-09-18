@@ -191,7 +191,7 @@ class Axis(object):
         self._values.append(value)
 
 
-class scatterPlot(Plot):
+class ScatterPlot(Plot):
     """Scatter Plot class"""
 
     def __init__(self, reports, x_cols=[None, ], y_cols=[None, ],
