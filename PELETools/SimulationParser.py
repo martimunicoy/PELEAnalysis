@@ -13,6 +13,7 @@ from .Molecules import atomBuilder
 from .Molecules import linkBuilder
 from .PDB import PDBHandler
 from .Utils import fromDictValuesToList
+from .PELETools import Plotter
 
 
 # Script information
@@ -90,6 +91,17 @@ class Simulation(object):
                 if (i == key):
                     return report
             raise IndexError
+
+    # @TODO
+    def plot(self, plot_type='ScatterPlot'):
+        if (plot_type not in Plotter.PLOT_TYPES):
+            raise NameError('Unkown plot type \'{}\''.format(plot_type))
+
+        """
+        if (plot_type == 'ScatterPlot'):
+            plot = Plotter.ScatterPlot(REPORTS!)
+        """
+
 
 
 class AdaptiveSimulation(Simulation):
