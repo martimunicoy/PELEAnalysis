@@ -144,16 +144,17 @@ class Axis(object):
                 name of the metric to plot with the units that were added to it
         """
 
-        if "energy" in metric_name.lower():
+        if ("energy" in metric_name.lower()):
             label = metric_name + " ($kcal/mol$)"
-        elif "energies" in metric_name.lower():
+        elif ("energies" in metric_name.lower()):
             label = metric_name + " ($kcal/mol$)"
-        elif "distance" in metric_name.lower():
+        elif ("distance" in metric_name.lower()):
             label = metric_name + " ($\AA$)"
-        elif "rmsd" in metric_name.lower():
+        elif ("rmsd" in metric_name.lower()):
             label = metric_name + " ($\AA$)"
         else:
             label = metric_name
+
         return label
 
     def set_axis_name_from_report(self, report):
