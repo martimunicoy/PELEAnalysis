@@ -1,3 +1,4 @@
+import os
 from math import isnan
 
 
@@ -5,7 +6,7 @@ class Plot(object):
     """ Parent class that defines all basic parameters used in a PELE plot"""
 
     def __init__(self, reports,
-                 x_rows=[None, ], y_rows=[None, ], z_rows=[None, ],
+                 x_cols=[None, ], y_cols=[None, ], z_cols=[None, ],
                  x_name=None, y_name=None, z_name=None,
                  output_path=None, z_max=None, z_min=None):
         """Represent the scatter plot
@@ -14,13 +15,13 @@ class Plot(object):
         ----------
         reports : string
                   list of report files to look for data
-        x_rows : list of integers
+        x_cols : list of integers
                  integers which specify the report columns to represent in the
                  X axis
-        y_rows : list of integers
+        y_cols : list of integers
                  integers which specify the report columns to represent in the
                  Y axis
-        z_rows : list of integers
+        z_cols : list of integers
                  integers which specify the report columns to represent in the
                  colorbar
         x_name : string
@@ -37,40 +38,104 @@ class Plot(object):
                 it sets the minimum range value of the colorbar
         """
 
-        # Set class attributes
-        self.x_rows = x_rows
-        self.y_rows = y_rows
-        self.z_rows = z_rows
-        self.x_name = x_name
-        self.y_name = y_name
-        self.z_name = z_name
-        self.output_path = output_path
-
-        # Initiate plot attributes
-        self.x_values = []
-        self.y_values = []
-        self.z_values = []
-        self.labels = []
-        annotations = []
-
         # Set default x and y axis
         if (None in self.x_rows):
-            self.x_rows = [2, ]
+            self.x_cols = [2, ]
             self.x_name = "Pele step"
         if (None in self.y_rows):
-            self.y_rows = [5, ]
+            self.y_cols = [5, ]
             self.y_name = "Interaction energy ($kcal/mol$)"
 
-        # Set axis names
-        with open(reports[0], 'r') as report_file:
+        # Set plot axes
+        self.axes = {'x': Axis(x_cols, x_name),
+                     'y': Axis(y_cols, y_name),
+                     'z': Axis(z_cols, z_name)}
+
+        # Set other plot attributes
+        self.output_path = output_path
+
+        for axis in self.axes.values():
+            if (axis.axis_name is None):
+                self.x_axis.set_axis_name_from_report(reports[0])
+
+        self.x_axis.get_values_from_reports(reports)
+
+
+
+class Axis(object):
+    """ This class handles data of a plot axis """
+    def __init__(self, axis_columns, axis_name=None):
+        """Initializer function
+
+        PARAMETERS
+        ----------
+        axis_column : list of integers
+                      list of column indexes from where to gather data in the
+                      report. Note that report indexes start at 1. Also note
+                      that in case that multiple indexes are defined here, the
+                      final metric will be the sum of all the corresponding
+                      metrics.
+        axis_name : string
+                    axis name
+        """
+        self.axis_column = axis_columns
+        self.axis_name = self._add_units(axis_name)
+        self._values = []
+
+    @property
+    def values(self):
+        return self._values
+
+    def _add_units(metric_name):
+        """Add units according to the input metric
+
+        PARAMETERS
+        ----------
+        metric_name : string
+                      name of the metric to plot
+
+        RETURNS
+        -------
+        label : string
+                name of the metric to plot with the units that were added to it
+        """
+
+        if "energy" in metric_name.lower():
+            label = metric_name + " ($kcal/mol$)"
+        elif "energies" in metric_name.lower():
+            label = metric_name + " ($kcal/mol$)"
+        elif "distance" in metric_name.lower():
+            label = metric_name + " ($\AA$)"
+        elif "rmsd" in metric_name.lower():
+            label = metric_name + " ($\AA$)"
+        else:
+            label = metric_name
+        return label
+
+    def set_axis_name_from_report(self, report):
+        """Set axis name from report column info
+
+        PARAMETERS
+        ----------
+        report : string
+                 path to PELE report from where to extract axis name
+
+        """
+        with open(report, 'r') as report_file:
             line = report_file.readline()
-            if (x_name is None):
-                x_name = str(line.split("    ")[x_rows[0] - 1])
-            if (y_name is None):
-                y_name = str(line.split("    ")[y_rows[0] - 1])
-            if (None not in z_rows) and (z_name is None):
-                z_name = str(line.split("    ")[z_rows[0] - 1])
-                z_name = addUnits(z_name)
+            self.axis_name = str(line.split("    ")[self.axis_column[0] - 1])
+
+    def set_values_from_reports(self, reports):
+        """Set axis name from report column info
+
+        PARAMETERS
+        ----------
+        reports : list of strings
+                  list of paths to PELE report from where to extract axis
+                  values
+
+        """
+        self._values = []
 
         for report in reports:
             report_directory = os.path.dirname(report)
@@ -115,6 +180,8 @@ class Plot(object):
 
         if z_min is None:
             z_min = min(z_values)
+
+
 
 
 class scatterPlot(object):
