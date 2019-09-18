@@ -1,9 +1,10 @@
 import os
 from math import nan, isnan
+from matplotlib import pyplot as plt
 
 
 class Plot(object):
-    """ Parent class that defines all basic parameters used in a PELE plot"""
+    """Parent class that defines all basic parameters used in a PELE plot"""
 
     def __init__(self, reports,
                  x_cols=[None, ], y_cols=[None, ], z_cols=[None, ],
@@ -107,7 +108,7 @@ class Plot(object):
 
 
 class Axis(object):
-    """ This class handles data of a plot axis """
+    """This class handles data of a plot axis"""
     def __init__(self, axis_columns, axis_name=None):
         """Initializer function
 
@@ -128,6 +129,9 @@ class Axis(object):
 
     @property
     def values(self):
+        if (len(self.values) == 0):
+            return None
+
         return self._values
 
     def _add_units(metric_name):
@@ -180,82 +184,124 @@ class Axis(object):
 
         PARAMETERS
         ----------
-        reports : list of strings
-                  list of paths to PELE report from where to extract axis
-                  values
+        value : float
+                Value that will be added to axis values list
 
         """
-        self._values += values
+        self._values.append(value)
 
 
+class scatterPlot(Plot):
+    """Scatter Plot class"""
 
+    def __init__(self, reports, x_cols=[None, ], y_cols=[None, ],
+                 z_cols=[None, ], x_name=None, y_name=None, z_name=None,
+                 output_path=None, z_max=None, z_min=None):
+        """Represent the scatter plot
 
+        PARAMETERS
+        ----------
+        reports : string
+                  list of report files to look for data
+        x_cols : list of integers
+                 integers which specify the report columns to represent in the
+                 X axis
+        y_cols : list of integers
+                 integers which specify the report columns to represent in the
+                 Y axis
+        z_cols : list of integers
+                 integers which specify the report columns to represent in the
+                 colorbar
+        x_name : string
+                 label of the X axis
+        y_name : string
+                 label of the Y axis
+        z_name : string
+                 label of the colorbar
+        output_path : string
+                      output directory where the resulting plot will be saved
+        z_max : float
+                it sets the maximum range value of the colorbar
+        z_min : float
+                it sets the minimum range value of the colorbar
+        """
+        super().__init__(reports, x_cols, y_cols, z_cols, x_name, y_name,
+                         z_name, output_path, z_max, z_min)
 
-class scatterPlot(object):
+    def show(self):
+        """Display plot"""
+        self._plot_builder()
+        plt.show()
 
+    def save_to(self, path):
+        """Saves the plot to a path
 
+        PARAMETERS
+        ----------
+        path : string
+               Path where the plot will be saved
+        """
+        self._plot_builder()
+        plt.savefig(path)
 
-    if z_min == z_max:
-        cmap = pyplot.cm.autumn
-    else:
-        cmap = pyplot.cm.plasma
+    def _plot_builder(self):
+        """Build the plot"""
 
-    norm = pyplot.Normalize(z_min, z_max)
+        if (self.z_min == self.z_max):
+            cmap = plt.cm.autumn
+        else:
+            cmap = plt.cm.plasma
 
-    fig, ax = pyplot.subplots()
+        norm = plt.Normalize(self.z_min, self.z_max)
 
-    if output_path is not None:
-        s = 20
-    else:
-        s = None
+        fig, ax = plt.subplots()
 
-    sc = pyplot.scatter(x_values, y_values, c=z_values, cmap=cmap, s=s,
-                        norm=norm)
+        sc = plt.scatter(self.axes['x'].values,
+                         self.axes['y'].values,
+                         c=self.axes['z'].values,
+                         cmap=cmap, norm=norm)
 
-    ax.margins(0.05)
-    ax.set_facecolor('lightgray')
-    pyplot.ylabel(y_name)
-    pyplot.xlabel(x_name)
+        ax.margins(0.05)
+        ax.set_facecolor('lightgray')
+        plt.xlabel(self.axes['x'].axis_name)
+        plt.ylabel(self.axes['y'].axis_name)
 
-    annot = ax.annotate("", xy=(0, 0), xytext=(20, 20),
-                        textcoords="offset points",
-                        bbox=dict(boxstyle="round", fc="w"),
-                        arrowprops=dict(arrowstyle="->"))
-    annot.set_visible(False)
+        annot = ax.annotate("", xy=(0, 0), xytext=(20, 20),
+                            textcoords="offset points",
+                            bbox=dict(boxstyle="round", fc="w"),
+                            arrowprops=dict(arrowstyle="->"))
+        annot.set_visible(False)
 
-    # Activate the colorbar only if the Z axis contains data to plot
-    if None not in z_rows:
-        cbar = pyplot.colorbar(sc, drawedges=False)
-        cbar.ax.set_ylabel(z_name)
+        # Activate the colorbar only if the Z axis contains data to plot
+        if (self.axes['z'].values is not None):
+            cbar = plt.colorbar(sc, drawedges=False)
+            cbar.ax.set_ylabel(self.axes['z'].axis_name)
 
-    def update_annot(ind):
-        """Update the information box of the selected point"""
-        pos = sc.get_offsets()[ind["ind"][0]]
-        annot.xy = pos
-        annot.set_text(annotations[int(ind["ind"][0])])
-        annot.get_bbox_patch().set_facecolor(cmap(norm(
-            z_values[ind["ind"][0]])))
+        def update_annot(ind):
+            """Update the information box of the selected point"""
+            pos = sc.get_offsets()[ind["ind"][0]]
+            annot.xy = pos
+            annot.set_text(self.annotations[int(ind["ind"][0])])
+            if (self.axes['z'].values is not None):
+                annot.get_bbox_patch().set_facecolor(cmap(norm(
+                    self.axes['z'].values[ind["ind"][0]])))
 
-    def hover(event):
-        """Action to perform when hovering the mouse on a point"""
-        vis = annot.get_visible()
-        if event.inaxes == ax:
-            cont, ind = sc.contains(event)
-            if cont:
-                update_annot(ind)
-                annot.set_visible(True)
-                fig.canvas.draw_idle()
-            else:
-                if vis:
-                    annot.set_visible(False)
+        def hover(event):
+            """Action to perform when hovering the mouse on a point"""
+            vis = annot.get_visible()
+            if event.inaxes == ax:
+                cont, ind = sc.contains(event)
+                if cont:
+                    update_annot(ind)
+                    annot.set_visible(True)
                     fig.canvas.draw_idle()
+                else:
+                    if vis:
+                        annot.set_visible(False)
+                        fig.canvas.draw_idle()
 
-    # Respond to mouse motion
-    fig.canvas.mpl_connect("motion_notify_event", hover)
+        # Respond to mouse motion
+        fig.canvas.mpl_connect("motion_notify_event", hover)
 
-    # Save or display the plot depending on whether an output path was set or
-    # not
-    if output_path is not None:
-        pyplot.savefig(output_path)
-    else:
-        pyplot.show()
+        # Save or display the plot depending on whether an output path was set or
+        # not
