@@ -498,7 +498,87 @@ class DensityPlot(Plot):
 
     def _plot_builder(self):
         f, ax = plt.subplots()
-        ax.set_aspect("equal")
 
         ax = sns.kdeplot(self.axes['x'].values, self.axes['y'].values,
                          cmap="Reds", shade=True, shade_lowest=False)
+
+
+class JointPlot(Plot):
+    """Joint Plot class"""
+
+    def __init__(self, reports, x_cols=[None, ], y_cols=[None, ],
+                 z_cols=[None, ], x_name=None, y_name=None, z_name=None,
+                 output_path=None, z_max=None, z_min=None):
+        """Represent the scatter plot
+
+        PARAMETERS
+        ----------
+        reports : string
+                  list of report files to look for data
+        x_cols : list of integers
+                 integers which specify the report columns to represent in the
+                 X axis
+        y_cols : list of integers
+                 integers which specify the report columns to represent in the
+                 Y axis
+        z_cols : list of integers
+                 integers which specify the report columns to represent in the
+                 colorbar
+        x_name : string
+                 label of the X axis
+        y_name : string
+                 label of the Y axis
+        z_name : string
+                 label of the colorbar
+        output_path : string
+                      output directory where the resulting plot will be saved
+        z_max : float
+                it sets the maximum range value of the colorbar
+        z_min : float
+                it sets the minimum range value of the colorbar
+        """
+        super().__init__(reports, x_cols, y_cols, z_cols, x_name, y_name,
+                         z_name, output_path, z_max, z_min)
+
+        sns.set_style("ticks")
+
+        self.color = 'darkblue'
+        self.colors = {'lightblue': ('lightskyblue', 'steelblue'),
+                       'darkblue': ('lightsteelblue', 'royalblue')}
+        self.cmap = sns.dark_palette(self.colors[self.color][1], reverse=True,
+                                     as_cmap=True)
+
+    def set_colormap(self, colormap):
+        if (colormap in self.colors.keys()):
+            self.color = colormap
+        else:
+            raise NameError('Unknown colormap name: \'{}\''.format(colormap))
+
+    def show(self):
+        """Display plot"""
+        self._plot_builder()
+        plt.show()
+
+    def save_to(self, path):
+        """Save the plot to a path
+
+        PARAMETERS
+        ----------
+        path : string
+               Path where the plot will be saved
+        """
+        self._plot_builder()
+        plt.savefig(path)
+
+    def _plot_builder(self):
+        ax = sns.jointplot(x=self.axes['x'].values, y=self.axes['y'].values,
+                           color=self.colors[self.color][0],
+                           kind='kde', cmap=self.cmap, shade=False)
+
+        ax.plot_joint(sns.scatterplot, color=self.colors[self.color][0],
+                      edgecolor=self.colors[self.color][1], marker='o',
+                      alpha=0.4)
+        ax.plot_joint(sns.kdeplot, shade=False, shade_lowest=False,
+                      cmap=self.cmap)
+
+        ax.set_axis_labels(self.axes['x'].name, self.axes['y'].name, fontsize=16)
