@@ -1,6 +1,7 @@
 import os
 from math import nan, isnan
 from matplotlib import pyplot as plt
+import seaborn as sns
 
 
 class Plot(object):
@@ -300,6 +301,110 @@ class ScatterPlot(Plot):
         plt.xlabel(self.axes['x'].name)
         plt.ylabel(self.axes['y'].name)
 
+        # Activate the colorbar only if the Z axis contains data to plot
+        if (self.axes['z'].values is not None):
+            cbar = plt.colorbar(sc, drawedges=False)
+            cbar.ax.set_ylabel(self.axes['z'].name)
+
+
+
+class InteractiveScatterPlot(Plot):
+    """Interactive Scatter Plot class"""
+
+    def __init__(self, reports, x_cols=[None, ], y_cols=[None, ],
+                 z_cols=[None, ], x_name=None, y_name=None, z_name=None,
+                 output_path=None, z_max=None, z_min=None):
+        """Represent the scatter plot
+
+        PARAMETERS
+        ----------
+        reports : string
+                  list of report files to look for data
+        x_cols : list of integers
+                 integers which specify the report columns to represent in the
+                 X axis
+        y_cols : list of integers
+                 integers which specify the report columns to represent in the
+                 Y axis
+        z_cols : list of integers
+                 integers which specify the report columns to represent in the
+                 colorbar
+        x_name : string
+                 label of the X axis
+        y_name : string
+                 label of the Y axis
+        z_name : string
+                 label of the colorbar
+        output_path : string
+                      output directory where the resulting plot will be saved
+        z_max : float
+                it sets the maximum range value of the colorbar
+        z_min : float
+                it sets the minimum range value of the colorbar
+        """
+        super().__init__(reports, x_cols, y_cols, z_cols, x_name, y_name,
+                         z_name, output_path, z_max, z_min)
+
+        self.set_colormap('autumn')
+
+    def set_colormap(self, colormap):
+        """Set colormap of the plot
+
+        PARAMETERS
+        ----------
+        colormap : string
+                   name of the colormap to set
+        """
+        if (colormap == 'plasma'):
+            self.cmap = plt.cm.plasma
+        elif (colormap == 'autumn'):
+            self.cmap = plt.cm.autumn
+        elif (colormap == 'winter'):
+            self.cmap = plt.cm.winter
+        elif (colormap == 'spring'):
+            self.cmap = plt.cm.spring
+        elif (colormap == 'summer'):
+            self.cmap = plt.cm.summer
+        else:
+            raise NameError('Unknown colormap name: \'{}\''.format(colormap))
+
+    def show(self):
+        """Display plot"""
+        self._plot_builder()
+        plt.show()
+
+    def save_to(self, path):
+        """Save the plot to a path
+
+        PARAMETERS
+        ----------
+        path : string
+               Path where the plot will be saved
+        """
+        self._plot_builder()
+        plt.savefig(path)
+
+    def _plot_builder(self):
+        """Build the plot"""
+        norm = plt.Normalize(self.z_min, self.z_max)
+
+        fig, ax = plt.subplots()
+
+        if (self.axes['z'].values is None):
+            colors = [0 for i in range(0, len(self.axes['x'].values))]
+        else:
+            colors = self.axes['z'].values
+
+        sc = plt.scatter(self.axes['x'].values,
+                         self.axes['y'].values,
+                         c=colors,
+                         cmap=self.cmap, norm=norm)
+
+        ax.margins(0.05)
+        ax.set_facecolor('lightgray')
+        plt.xlabel(self.axes['x'].name)
+        plt.ylabel(self.axes['y'].name)
+
         annot = ax.annotate("", xy=(0, 0), xytext=(20, 20),
                             textcoords="offset points",
                             bbox=dict(boxstyle="round", fc="w"),
@@ -336,3 +441,64 @@ class ScatterPlot(Plot):
 
         # Respond to mouse motion
         fig.canvas.mpl_connect("motion_notify_event", hover)
+
+
+class DensityPlot(Plot):
+    """Density Plot class"""
+
+    def __init__(self, reports, x_cols=[None, ], y_cols=[None, ],
+                 z_cols=[None, ], x_name=None, y_name=None, z_name=None,
+                 output_path=None, z_max=None, z_min=None):
+        """Represent the scatter plot
+
+        PARAMETERS
+        ----------
+        reports : string
+                  list of report files to look for data
+        x_cols : list of integers
+                 integers which specify the report columns to represent in the
+                 X axis
+        y_cols : list of integers
+                 integers which specify the report columns to represent in the
+                 Y axis
+        z_cols : list of integers
+                 integers which specify the report columns to represent in the
+                 colorbar
+        x_name : string
+                 label of the X axis
+        y_name : string
+                 label of the Y axis
+        z_name : string
+                 label of the colorbar
+        output_path : string
+                      output directory where the resulting plot will be saved
+        z_max : float
+                it sets the maximum range value of the colorbar
+        z_min : float
+                it sets the minimum range value of the colorbar
+        """
+        super().__init__(reports, x_cols, y_cols, z_cols, x_name, y_name,
+                         z_name, output_path, z_max, z_min)
+
+    def show(self):
+        """Display plot"""
+        self._plot_builder()
+        plt.show()
+
+    def save_to(self, path):
+        """Save the plot to a path
+
+        PARAMETERS
+        ----------
+        path : string
+               Path where the plot will be saved
+        """
+        self._plot_builder()
+        plt.savefig(path)
+
+    def _plot_builder(self):
+        f, ax = plt.subplots()
+        ax.set_aspect("equal")
+
+        ax = sns.kdeplot(self.axes['x'].values, self.axes['y'].values,
+                         cmap="Reds", shade=True, shade_lowest=False)
