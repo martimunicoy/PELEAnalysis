@@ -558,6 +558,9 @@ class JointPlot(Plot):
         # Number of levels to plot
         self._n_levels = 5
 
+        # Graph name
+        self._name = ''
+
     @property
     def x_axis_limits(self):
         return self._x_axis_limits
@@ -569,6 +572,10 @@ class JointPlot(Plot):
     @property
     def n_levels(self):
         return self._n_levels
+
+    @property
+    def name(self):
+        return self._name
 
     def set_colormap(self, colormap):
         """Sets colormap
@@ -632,9 +639,19 @@ class JointPlot(Plot):
                                     '\'{}\''.format(levels))
         self._n_levels = levels
 
+    def set_name(self, name):
+        """Sets the name for the plot
+
+        PARAMETERS
+        ----------
+        name : str
+               name for the plot
+        """
+        self._name = name
+
     def show(self):
         """Display plot"""
-        ax = self._plot_builder()
+        _ = self._plot_builder()
         plt.show()
 
     def save_to(self, path):
@@ -651,8 +668,10 @@ class JointPlot(Plot):
     def _plot_builder(self, display_edges=True):
         if (display_edges is False):
             edges_alpha = 0
+            markers_alpha = 1
         else:
             edges_alpha = 1
+            markers_alpha = 0.4
 
         ax = sns.jointplot(x=self.axes['x'].values, y=self.axes['y'].values,
                            color=self.colors[self.color][0],
@@ -661,13 +680,7 @@ class JointPlot(Plot):
 
         ax.plot_joint(sns.scatterplot, color=self.colors[self.color][0],
                       edgecolor=self.colors[self.color][1], marker='o',
-                      alpha=0.4)
-
-        """
-        if (display_edges):
-            ax.plot_joint(sns.kdeplot, shade=False, shade_lowest=False,
-                          cmap=self.cmap, n_levels=self.n_levels)
-        """
+                      alpha=markers_alpha)
 
         if (self.x_axis_limits is not None):
             ax.ax_marg_x.set_xlim(self.x_axis_limits[0], self.x_axis_limits[1])
@@ -682,11 +695,11 @@ class JointPlot(Plot):
 
     def show_joined(self, other_joint_plots):
         ax = self._plot_builder(display_edges=False)
-
-        legends=[]
+        legends = [self.name, ]
 
         for other_joint_plot in other_joint_plots:
             self._other_joint_plot(ax, other_joint_plot)
+            legends.append(other_joint_plot.name)
 
         plt.legend(legends)
 
