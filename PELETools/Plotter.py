@@ -505,13 +505,13 @@ class DensityPlot(Plot):
                          cmap="Reds", shade=True, shade_lowest=False)
 
 
-class JointPlot(Plot):
-    """Joint Plot class"""
+class ScatterDensityPlot(Plot):
+    """Scatter with denisty plot class"""
 
     def __init__(self, reports, x_cols=[None, ], y_cols=[None, ],
                  z_cols=[None, ], x_name=None, y_name=None, z_name=None,
                  output_path=None, z_max=None, z_min=None):
-        """Represent the scatter plot
+        """Initiate plot class
 
         PARAMETERS
         ----------
@@ -711,7 +711,7 @@ class JointPlot(Plot):
         color, edgecolor = self.colors[other_joint_plot.color]
 
         ax.plot_joint(sns.scatterplot, color=color, edgecolor=edgecolor,
-                      marker='o', alpha=0.4)
+                      marker='o')
 
         sns.kdeplot(other_joint_plot.axes['x'].values, ax=ax.ax_marg_x,
                     color=color, shade=True)
