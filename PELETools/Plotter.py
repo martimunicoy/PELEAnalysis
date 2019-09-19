@@ -544,9 +544,10 @@ class JointPlot(Plot):
 
         sns.set_style("ticks")
 
-        self.color = 'darkblue'
-        self.colors = {'lightblue': ('lightskyblue', 'steelblue'),
-                       'darkblue': ('lightsteelblue', 'royalblue')}
+        self.color = 'blue'
+        self.colors = {'blue': ('lightsteelblue', 'royalblue'),
+                       'orange': ('wheat', 'darkorange'),
+                       'green': ('palegreen', 'forestgreen')}
         self.cmap = sns.dark_palette(self.colors[self.color][1], reverse=True,
                                      as_cmap=True)
 
@@ -633,7 +634,7 @@ class JointPlot(Plot):
 
     def show(self):
         """Display plot"""
-        self._plot_builder()
+        ax = self._plot_builder()
         plt.show()
 
     def save_to(self, path):
@@ -647,16 +648,26 @@ class JointPlot(Plot):
         self._plot_builder()
         plt.savefig(path)
 
-    def _plot_builder(self):
+    def _plot_builder(self, display_edges=True):
+        if (display_edges is False):
+            edges_alpha = 0
+        else:
+            edges_alpha = 1
+
         ax = sns.jointplot(x=self.axes['x'].values, y=self.axes['y'].values,
                            color=self.colors[self.color][0],
-                           kind='kde', cmap=self.cmap, shade=False, n_levels=self.n_levels)
+                           kind='kde', cmap=self.cmap, shade=False,
+                           n_levels=self.n_levels, alpha=edges_alpha)
 
         ax.plot_joint(sns.scatterplot, color=self.colors[self.color][0],
                       edgecolor=self.colors[self.color][1], marker='o',
                       alpha=0.4)
-        ax.plot_joint(sns.kdeplot, shade=False, shade_lowest=False,
-                      cmap=self.cmap, n_levels=self.n_levels)
+
+        """
+        if (display_edges):
+            ax.plot_joint(sns.kdeplot, shade=False, shade_lowest=False,
+                          cmap=self.cmap, n_levels=self.n_levels)
+        """
 
         if (self.x_axis_limits is not None):
             ax.ax_marg_x.set_xlim(self.x_axis_limits[0], self.x_axis_limits[1])
@@ -664,4 +675,33 @@ class JointPlot(Plot):
         if (self.y_axis_limits is not None):
             ax.ax_marg_y.set_ylim(self.y_axis_limits[0], self.y_axis_limits[1])
 
-        ax.set_axis_labels(self.axes['x'].name, self.axes['y'].name, fontsize=16)
+        ax.set_axis_labels(self.axes['x'].name, self.axes['y'].name,
+                           fontsize=16)
+
+        return ax
+
+    def show_joined(self, other_joint_plots):
+        ax = self._plot_builder(display_edges=False)
+
+        legends=[]
+
+        for other_joint_plot in other_joint_plots:
+            self._other_joint_plot(ax, other_joint_plot)
+
+        plt.legend(legends)
+
+        plt.show()
+
+    def _other_joint_plot(self, ax, other_joint_plot):
+        ax.x = other_joint_plot.axes['x'].values
+        ax.y = other_joint_plot.axes['y'].values
+        color, edgecolor = self.colors[other_joint_plot.color]
+
+        ax.plot_joint(sns.scatterplot, color=color, edgecolor=edgecolor,
+                      marker='o', alpha=0.4)
+
+        sns.kdeplot(other_joint_plot.axes['x'].values, ax=ax.ax_marg_x,
+                    color=color, shade=True)
+
+        sns.kdeplot(other_joint_plot.axes['y'].values, ax=ax.ax_marg_y,
+                    color=color, shade=True, vertical=True)
