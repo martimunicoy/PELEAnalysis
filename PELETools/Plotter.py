@@ -188,7 +188,8 @@ class Axis(object):
 
         with open(report, 'r') as report_file:
             line = report_file.readline()
-            self.name = str(line.split("    ")[self.columns[0] - 1])
+            self.name = self._add_units(
+                str(line.split("    ")[self.columns[0] - 1]))
 
     def clear_values(self):
         """It clears the values list of the axis
@@ -545,9 +546,9 @@ class ScatterDensityPlot(Plot):
         sns.set_style("ticks")
 
         self.color = 'blue'
-        self.colors = {'blue': ('lightsteelblue', 'royalblue'),
-                       'orange': ('wheat', 'darkorange'),
-                       'green': ('palegreen', 'forestgreen')}
+        self.colors = {'blue': ('lightskyblue', 'royalblue'),
+                       'red': ('lightcoral', 'firebrick'),
+                       'green': ('palegreen', 'seagreen')}
         self.cmap = sns.dark_palette(self.colors[self.color][1], reverse=True,
                                      as_cmap=True)
 
@@ -668,7 +669,7 @@ class ScatterDensityPlot(Plot):
     def _plot_builder(self, display_edges=True):
         if (display_edges is False):
             edges_alpha = 0
-            markers_alpha = 1
+            markers_alpha = 0.7
         else:
             edges_alpha = 1
             markers_alpha = 0.4
@@ -680,7 +681,7 @@ class ScatterDensityPlot(Plot):
 
         ax.plot_joint(sns.scatterplot, color=self.colors[self.color][0],
                       edgecolor=self.colors[self.color][1], marker='o',
-                      alpha=markers_alpha)
+                      alpha=markers_alpha, s=20)
 
         if (self.x_axis_limits is not None):
             ax.ax_marg_x.set_xlim(self.x_axis_limits[0], self.x_axis_limits[1])
@@ -697,6 +698,14 @@ class ScatterDensityPlot(Plot):
         ax = self._plot_builder(display_edges=False)
         legends = [self.name, ]
 
+        color, edgecolor = self.colors[self.color]
+
+        sns.kdeplot(self.axes['x'].values, ax=ax.ax_marg_x,
+                    color=color, shade=True, alpha=0.7)
+
+        sns.kdeplot(self.axes['y'].values, ax=ax.ax_marg_y,
+                    color=color, shade=True, vertical=True, alpha=0.7)
+
         for other_joint_plot in other_joint_plots:
             self._other_joint_plot(ax, other_joint_plot)
             legends.append(other_joint_plot.name)
@@ -711,10 +720,10 @@ class ScatterDensityPlot(Plot):
         color, edgecolor = self.colors[other_joint_plot.color]
 
         ax.plot_joint(sns.scatterplot, color=color, edgecolor=edgecolor,
-                      marker='o')
+                      marker='o', s=20)
 
         sns.kdeplot(other_joint_plot.axes['x'].values, ax=ax.ax_marg_x,
-                    color=color, shade=True)
+                    color=color, shade=True, alpha=0.7)
 
         sns.kdeplot(other_joint_plot.axes['y'].values, ax=ax.ax_marg_y,
-                    color=color, shade=True, vertical=True)
+                    color=color, shade=True, vertical=True, alpha=0.7)
