@@ -284,7 +284,7 @@ def scatterPlot(reports,
                                    "Model: " + str(i + 1))
 
                 labels.append(0)
-    
+
     if z_max is None:
         z_max = max(z_values)
 
