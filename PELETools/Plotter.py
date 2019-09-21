@@ -14,7 +14,7 @@ class Plot(object):
                  x_cols=[None, ], y_cols=[None, ], z_cols=[None, ],
                  x_name=None, y_name=None, z_name=None,
                  output_path=None, z_max=None, z_min=None):
-        """Represent the scatter plot
+        """Class initializer
 
         PARAMETERS
         ----------
@@ -113,7 +113,7 @@ class Plot(object):
 class Axis(object):
     """This class handles data of a plot axis"""
     def __init__(self, axis_columns, axis_name=None):
-        """Initializer function
+        """Class initializer
 
         PARAMETERS
         ----------
@@ -214,7 +214,7 @@ class ScatterPlot(Plot):
     def __init__(self, reports, x_cols=[None, ], y_cols=[None, ],
                  z_cols=[None, ], x_name=None, y_name=None, z_name=None,
                  output_path=None, z_max=None, z_min=None):
-        """Represent the scatter plot
+        """Class initializer
 
         PARAMETERS
         ----------
@@ -317,7 +317,7 @@ class InteractiveScatterPlot(Plot):
     def __init__(self, reports, x_cols=[None, ], y_cols=[None, ],
                  z_cols=[None, ], x_name=None, y_name=None, z_name=None,
                  output_path=None, z_max=None, z_min=None):
-        """Represent the scatter plot
+        """Class initializer
 
         PARAMETERS
         ----------
@@ -452,7 +452,7 @@ class DensityPlot(Plot):
     def __init__(self, reports, x_cols=[None, ], y_cols=[None, ],
                  z_cols=[None, ], x_name=None, y_name=None, z_name=None,
                  output_path=None, z_max=None, z_min=None):
-        """Represent the scatter plot
+        """Class initializer
 
         PARAMETERS
         ----------
@@ -500,6 +500,7 @@ class DensityPlot(Plot):
         plt.savefig(path)
 
     def _plot_builder(self):
+        """Builds internally the plot"""
         f, ax = plt.subplots()
 
         ax = sns.kdeplot(self.axes['x'].values, self.axes['y'].values,
@@ -512,7 +513,7 @@ class ScatterDensityPlot(Plot):
     def __init__(self, reports, x_cols=[None, ], y_cols=[None, ],
                  z_cols=[None, ], x_name=None, y_name=None, z_name=None,
                  output_path=None, z_max=None, z_min=None):
-        """Initiate plot class
+        """Class initializer
 
         PARAMETERS
         ----------
@@ -667,6 +668,13 @@ class ScatterDensityPlot(Plot):
         plt.savefig(path)
 
     def _plot_builder(self, display_edges=True):
+        """Builds internally the plot
+
+        RETURNS
+        -------
+        ax : matplotlib axis object
+             The corresponding axis of the plot
+        """
         if (display_edges is False):
             edges_alpha = 0
             markers_alpha = 0.7
@@ -695,6 +703,13 @@ class ScatterDensityPlot(Plot):
         return ax
 
     def show_joined(self, other_joint_plots):
+        """Overlaps one ScatterDensityPlot with others
+        
+        PARAMETERS
+        ----------
+        other_joint_plots : list of ScatterDensityPlot objects
+                            The other plots to overlap with this one
+        """
         ax = self._plot_builder(display_edges=False)
         legends = [self.name, ]
 
@@ -715,6 +730,15 @@ class ScatterDensityPlot(Plot):
         plt.show()
 
     def _other_joint_plot(self, ax, other_joint_plot):
+        """Does the internal jobs to overlap one ScatterDensityPlot with another one
+
+        PARAMETERS
+        ----------
+        ax : matplotlib axis object
+             The corresponding axis of the plot
+        other_joint_plot : ScatterDensityPlot object
+                           The other plot to overlap with this one
+        """
         ax.x = other_joint_plot.axes['x'].values
         ax.y = other_joint_plot.axes['y'].values
         color, edgecolor = self.colors[other_joint_plot.color]
@@ -727,3 +751,4 @@ class ScatterDensityPlot(Plot):
 
         sns.kdeplot(other_joint_plot.axes['y'].values, ax=ax.ax_marg_y,
                     color=color, shade=True, vertical=True, alpha=0.7)
+
