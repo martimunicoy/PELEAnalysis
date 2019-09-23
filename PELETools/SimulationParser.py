@@ -9,11 +9,11 @@ import sys
 
 
 # PELE imports
+from . import Plotter
 from .Molecules import atomBuilder
 from .Molecules import linkBuilder
 from .PDB import PDBHandler
 from .Utils import fromDictValuesToList
-from .PELETools import Plotter
 
 
 # Script information
@@ -101,7 +101,6 @@ class Simulation(object):
         if (plot_type == 'ScatterPlot'):
             plot = Plotter.ScatterPlot(REPORTS!)
         """
-
 
 
 class AdaptiveSimulation(Simulation):

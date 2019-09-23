@@ -704,7 +704,7 @@ class ScatterDensityPlot(Plot):
 
     def show_joined(self, other_joint_plots):
         """Overlaps one ScatterDensityPlot with others
-        
+
         PARAMETERS
         ----------
         other_joint_plots : list of ScatterDensityPlot objects

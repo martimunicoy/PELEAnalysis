@@ -3,37 +3,18 @@ import numpy as np
 
 class Metric(object):
     def __init__(self):
-        self._values = []
-        self._report = None
         self._metric_name = "CustomMetric"
-
-    @property
-    def values(self):
-        return self._values
-
-    @property
-    def report(self):
-        return self._report
 
     @property
     def metric_name(self):
         return self._metric_name
 
-    def writeToReport(self):
-        if (self.report is None):
-            print("Warning: metric {} could not be added to report".format(
-                self.metric_name))
-            return
+    def add_to_report(self, report):
+        values = self.get_values_from_trajectory(report.trajectory)
+        report.addMetric(self.metric_name, values)
 
-        if (self.values == []):
-            print("Warning: metric {} could not be added to report".format(
-                self.metric_name))
-            return
-
-        self.report.addMetric(self.metric_name, self.values)
-
-    def calculate(self, trajectory):
-        self._values = self._calculate(trajectory)
+    def get_values_from_trajectory(self, trajectory):
+        return self._calculate(trajectory)
 
 
 class AtomsInsideSphere(Metric):
@@ -101,7 +82,7 @@ class AtomInsideSphere(Metric):
             values.append(self.__isAtomInsideSphere(atom))
 
     def __isAtomInsideSphere(self, atom):
-        diff = np.array(self.center) - np.array(atom.coordinates)
+        diff = np.array(self.center) - np.array(atom.coords)
 
         return np.dot(diff, diff) < self.squared_radius
 
@@ -130,8 +111,10 @@ class DistanceBetweenAtoms(Metric):
         for atom1, atom2 in zip(atoms1, atoms2):
             values.append(self.__getDistanceBetweenAtoms(atom1, atom2))
 
+        return values
+
     def __getDistanceBetweenAtoms(self, atom1, atom2):
-        vector_from_1_to_2 = np.array(atom2.coordinates) - \
-            np.array(atom1.coordinates)
+        vector_from_1_to_2 = np.array(atom2.coords) - \
+            np.array(atom1.coords)
 
         return np.linalg.norm(vector_from_1_to_2)
