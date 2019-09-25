@@ -589,6 +589,9 @@ class ScatterDensityPlot(Plot):
         """
         if (colormap in self.colors.keys()):
             self.color = colormap
+            self.cmap = sns.dark_palette(self.colors[self.color][1],
+                                         reverse=True,
+                                         as_cmap=True)
         else:
             raise NameError('Unknown colormap name: \'{}\''.format(colormap))
 
