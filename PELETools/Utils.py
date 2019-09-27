@@ -56,3 +56,8 @@ def normalize(a, axis=-1, order=2):
 
 def norm(a, axis=-1, order=2):
     return np.atleast_1d(np.linalg.norm(a, order, axis))
+
+
+def calculate_Boltzmann_probability(energy, temperature=300):
+    return np.exp(-energy / 0.0019872041 / temperature)
+
