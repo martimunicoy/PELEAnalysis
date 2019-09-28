@@ -1,6 +1,8 @@
 import os
 from math import nan, isnan
 from matplotlib import pyplot as plt
+from matplotlib.colors import ListedColormap
+import numpy as np
 import seaborn as sns
 
 
@@ -13,7 +15,8 @@ class Plot(object):
     def __init__(self, reports,
                  x_cols=[None, ], y_cols=[None, ], z_cols=[None, ],
                  x_name=None, y_name=None, z_name=None,
-                 output_path=None, z_max=None, z_min=None):
+                 output_path=None, z_max=None, z_min=None,
+                 first_steps_to_ignore=0):
         """Class initializer
 
         PARAMETERS
@@ -41,6 +44,9 @@ class Plot(object):
                 it sets the maximum range value of the colorbar
         z_min : float
                 it sets the minimum range value of the colorbar
+        first_steps_to_ignore: integer
+                               number of first PELE steps whose values will be
+                               ignored
         """
 
         # Set default x and y axis
@@ -61,6 +67,7 @@ class Plot(object):
         self.annotations = []
         self.z_max = z_max
         self.z_min = z_min
+        self.first_steps_to_ignore = first_steps_to_ignore
 
         # Set axis names
         for axis in self.axes.values():
@@ -77,6 +84,9 @@ class Plot(object):
                 for i, line in enumerate(rf):
                     for axis in self.axes.values():
                         if (axis.columns is None):
+                            continue
+
+                        if (int(line.split()[1]) < self.first_steps_to_ignore):
                             continue
 
                         total = 0.
@@ -213,7 +223,8 @@ class ScatterPlot(Plot):
 
     def __init__(self, reports, x_cols=[None, ], y_cols=[None, ],
                  z_cols=[None, ], x_name=None, y_name=None, z_name=None,
-                 output_path=None, z_max=None, z_min=None):
+                 output_path=None, z_max=None, z_min=None,
+                 first_steps_to_ignore=0):
         """Class initializer
 
         PARAMETERS
@@ -241,11 +252,25 @@ class ScatterPlot(Plot):
                 it sets the maximum range value of the colorbar
         z_min : float
                 it sets the minimum range value of the colorbar
+        first_steps_to_ignore: integer
+                               number of first PELE steps whose values will be
+                               ignored
         """
         super().__init__(reports, x_cols, y_cols, z_cols, x_name, y_name,
-                         z_name, output_path, z_max, z_min)
+                         z_name, output_path, z_max, z_min,
+                         first_steps_to_ignore)
 
         self.set_colormap('autumn')
+        self._x_axis_limits = None
+        self._y_axis_limits = None
+
+    @property
+    def x_axis_limits(self):
+        return self._x_axis_limits
+
+    @property
+    def y_axis_limits(self):
+        return self._y_axis_limits
 
     def set_colormap(self, colormap):
         """Set colormap of the plot
@@ -265,8 +290,58 @@ class ScatterPlot(Plot):
             self.cmap = plt.cm.spring
         elif (colormap == 'summer'):
             self.cmap = plt.cm.summer
+        elif (colormap == 'Wistia'):
+            self.cmap = plt.cm.Wistia
+        elif (colormap == 'copper'):
+            self.cmap = plt.cm.copper
+        elif (colormap == 'Blues'):
+            self.cmap = plt.cm.Blues
+        elif (colormap == 'reducedBlues'):
+            blues = plt.cm.get_cmap('Blues', 512)
+            self.cmap = ListedColormap(blues(np.linspace(0.95, 0.4, 256)))
+        elif (colormap == 'reducedGreens'):
+            greens = plt.cm.get_cmap('Greens', 512)
+            self.cmap = ListedColormap(greens(np.linspace(0.95, 0.4, 256)))
+        elif (colormap == 'reducedReds'):
+            reds = plt.cm.get_cmap('Reds', 512)
+            self.cmap = ListedColormap(reds(np.linspace(0.95, 0.4, 256)))
+        elif (colormap == 'reducedPurples'):
+            purples = plt.cm.get_cmap('Purples', 512)
+            self.cmap = ListedColormap(purples(np.linspace(0.95, 0.4, 256)))
         else:
             raise NameError('Unknown colormap name: \'{}\''.format(colormap))
+
+    def set_x_axis_limits(self, limits):
+        """Sets x axis limits
+
+        PARAMETERS
+        ----------
+        limits : tuple of floats
+                 axis limits
+        """
+        if (limits is not None):
+            if (type(limits) != list and type(limits) != tuple):
+                raise TypeError('Wrong limits format: \'{}\''.format(limits))
+                if (len(limits != 2)):
+                    raise TypeError('Wrong limits format: ' +
+                                    '\'{}\''.format(limits))
+        self._x_axis_limits = limits
+
+    def set_y_axis_limits(self, limits):
+        """Sets y axis limits
+
+        PARAMETERS
+        ----------
+        limits : tuple of floats
+                 axis limits
+        """
+        if (limits is not None):
+            if (type(limits) != list and type(limits) != tuple):
+                raise TypeError('Wrong limits format: \'{}\''.format(limits))
+                if (len(limits != 2)):
+                    raise TypeError('Wrong limits format: ' +
+                                    '\'{}\''.format(limits))
+        self._y_axis_limits = limits
 
     def show(self):
         """Display plot"""
@@ -301,9 +376,12 @@ class ScatterPlot(Plot):
                          cmap=self.cmap, norm=norm)
 
         ax.margins(0.05)
-        ax.set_facecolor('lightgray')
+        ax.set_facecolor('whitesmoke')
         plt.xlabel(self.axes['x'].name)
         plt.ylabel(self.axes['y'].name)
+
+        plt.xlim(self.x_axis_limits)
+        plt.ylim(self.y_axis_limits)
 
         # Activate the colorbar only if the Z axis contains data to plot
         if (self.axes['z'].values is not None):
@@ -316,7 +394,8 @@ class InteractiveScatterPlot(Plot):
 
     def __init__(self, reports, x_cols=[None, ], y_cols=[None, ],
                  z_cols=[None, ], x_name=None, y_name=None, z_name=None,
-                 output_path=None, z_max=None, z_min=None):
+                 output_path=None, z_max=None, z_min=None,
+                 first_steps_to_ignore=0):
         """Class initializer
 
         PARAMETERS
@@ -344,9 +423,13 @@ class InteractiveScatterPlot(Plot):
                 it sets the maximum range value of the colorbar
         z_min : float
                 it sets the minimum range value of the colorbar
+        first_steps_to_ignore: integer
+                               number of first PELE steps whose values will be
+                               ignored
         """
         super().__init__(reports, x_cols, y_cols, z_cols, x_name, y_name,
-                         z_name, output_path, z_max, z_min)
+                         z_name, output_path, z_max, z_min,
+                         first_steps_to_ignore)
 
         self.set_colormap('autumn')
 
@@ -451,7 +534,8 @@ class DensityPlot(Plot):
 
     def __init__(self, reports, x_cols=[None, ], y_cols=[None, ],
                  z_cols=[None, ], x_name=None, y_name=None, z_name=None,
-                 output_path=None, z_max=None, z_min=None):
+                 output_path=None, z_max=None, z_min=None,
+                 first_steps_to_ignore=0):
         """Class initializer
 
         PARAMETERS
@@ -479,9 +563,13 @@ class DensityPlot(Plot):
                 it sets the maximum range value of the colorbar
         z_min : float
                 it sets the minimum range value of the colorbar
+        first_steps_to_ignore: integer
+                               number of first PELE steps whose values will be
+                               ignored
         """
         super().__init__(reports, x_cols, y_cols, z_cols, x_name, y_name,
-                         z_name, output_path, z_max, z_min)
+                         z_name, output_path, z_max, z_min,
+                         first_steps_to_ignore)
 
     def show(self):
         """Display plot"""
@@ -512,7 +600,8 @@ class ScatterDensityPlot(Plot):
 
     def __init__(self, reports, x_cols=[None, ], y_cols=[None, ],
                  z_cols=[None, ], x_name=None, y_name=None, z_name=None,
-                 output_path=None, z_max=None, z_min=None):
+                 output_path=None, z_max=None, z_min=None,
+                 first_steps_to_ignore=0):
         """Class initializer
 
         PARAMETERS
@@ -540,9 +629,13 @@ class ScatterDensityPlot(Plot):
                 it sets the maximum range value of the colorbar
         z_min : float
                 it sets the minimum range value of the colorbar
+        first_steps_to_ignore: integer
+                               number of first PELE steps whose values will be
+                               ignored
         """
         super().__init__(reports, x_cols, y_cols, z_cols, x_name, y_name,
-                         z_name, output_path, z_max, z_min)
+                         z_name, output_path, z_max, z_min,
+                         first_steps_to_ignore)
 
         sns.set_style("ticks")
 
@@ -756,3 +849,4 @@ class ScatterDensityPlot(Plot):
         sns.kdeplot(other_joint_plot.axes['y'].values, ax=ax.ax_marg_y,
                     color=color, shade=True, vertical=True, alpha=0.5)
         ax.ax_marg_y.lines[0].set_color(edgecolor)
+
