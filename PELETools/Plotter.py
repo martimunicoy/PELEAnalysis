@@ -642,7 +642,8 @@ class ScatterDensityPlot(Plot):
         self.color = 'blue'
         self.colors = {'blue': ('lightskyblue', 'royalblue'),
                        'red': ('lightcoral', 'firebrick'),
-                       'green': ('palegreen', 'seagreen')}
+                       'green': ('palegreen', 'seagreen'),
+                       'purple': ('mediumpurple', 'rebeccapurple')}
         self.cmap = sns.dark_palette(self.colors[self.color][1], reverse=True,
                                      as_cmap=True)
 
