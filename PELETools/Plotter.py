@@ -762,6 +762,7 @@ class ScatterDensityPlot(Plot):
                Path where the plot will be saved
         """
         self._plot_builder()
+        plt.tight_layout()
         plt.savefig(path)
 
     def _plot_builder(self, display_edges=True):
