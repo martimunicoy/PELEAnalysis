@@ -753,17 +753,26 @@ class ScatterDensityPlot(Plot):
         _ = self._plot_builder()
         plt.show()
 
-    def save_to(self, path):
+    def save_to(self, path, high_resolution=False):
         """Save the plot to a path
 
         PARAMETERS
         ----------
         path : string
                Path where the plot will be saved
+        high_resolution : boolean
+                          Whether to save the plot in high resoltion or not.
+                          Default is false.
         """
+        dpi = 300
+        plot_format = 'png'
+        if (high_resolution):
+            dpi = 1200
+            plot_format = 'svg'
+
         self._plot_builder()
         plt.tight_layout()
-        plt.savefig(path)
+        plt.savefig(path, format=plot_format, dpi=dpi)
 
     def _plot_builder(self, display_edges=True):
         """Builds internally the plot
