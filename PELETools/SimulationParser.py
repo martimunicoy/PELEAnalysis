@@ -13,7 +13,7 @@ from . import Plotter
 from .Molecules import atomBuilder
 from .Molecules import linkBuilder
 from .PDB import PDBHandler
-from .Utils import fromDictValuesToList
+from .Utils import fromDictValuesToList, isThereAFile
 
 
 # Script information
@@ -232,8 +232,13 @@ class Report:
 
         return metric_values
 
-    def addMetric(self, metric_name, values):
-        with open(self.path + "/" + self.name) as report_file:
+    def addMetric(self, metric_name, values, try_to_append=False):
+        input_report_path = self.path + "/" + self.name
+        if (try_to_append):
+            if (isThereAFile(self.path + "/mod_" + self.name)):
+                input_report_path = self.path + "/mod_" + self.name
+
+        with open(input_report_path) as report_file:
             data = report_file.read()
 
         lines = data.split("\n")
@@ -545,7 +550,7 @@ def containsAtom(line, atom_data):
     residue = int(residue)
 
     line_chain = line[21]
-    line_residue = int(line[23:26])
+    line_residue = int(line[22:26])
     line_atom_name = line[12:16]
 
     if line_chain == chain:
