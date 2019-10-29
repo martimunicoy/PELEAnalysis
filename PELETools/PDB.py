@@ -105,6 +105,10 @@ class PDBParser:
                     print("PDBParser Warning: unknown line type " +
                           "{}".format(line))
 
+            # In case a final TER is missing
+            if (len(self.__temporary_atoms_chunk) != 0):
+                self._processTER()
+
     def _foundENDMDL(self, line):
         if (len(line) < 6):
             return False

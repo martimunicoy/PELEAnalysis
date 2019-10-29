@@ -324,7 +324,6 @@ class Trajectory:
 
         return list_of_atoms
 
-    # Not tested yet
     def _getAtomsFromNonIndexedAtoms(self, atom_data):
         list_of_atoms = []
 
@@ -388,18 +387,17 @@ class Trajectory:
 
         with open(self.path + "/" + self.name) as trajectory_file:
             list_of_atoms = []
-            model = 0
+            current_model = 0
             for i, line in enumerate(trajectory_file):
-                if (self.PDBHandler.currentModel(i) != model):
-                    if self.models.active[model]:
-                        links_list.append(linkBuilder(list_of_atoms))
-                        list_of_atoms = []
-                    model += 1
+                if (line[:6] == 'ENDMDL'):
+                    links_list.append(linkBuilder(list_of_atoms))
+                    list_of_atoms = []
+                    current_model += 1
 
-                if not self.models.active[model]:
+                if (not self.models.active[current_model]):
                     continue
 
-                if containsLink(line, link_data):
+                if (containsLink(line, link_data)):
                     atom = atomBuilder(line)
                     list_of_atoms.append(atom)
 
