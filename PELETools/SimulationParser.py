@@ -199,9 +199,19 @@ class Report:
                               self.trajectory_id)
             self.logfile = logfile
 
-    def getReportInfo(self):
+    def getReportInfo(self, from_mod=False):
         models = 0
-        with open(self.path + "/" + self.name) as report_file:
+
+        path_to_report = self.path + "/" + self.name
+        if (from_mod):
+            if (isThereAFile(self.path + "/mod_" + self.name)):
+                path_to_report = self.path + "/mod_" + self.name
+            else:
+                print('SimulationParser.getReportInfo Warning: mod_report ' +
+                      'not found, metrics will be retrieved from original ' +
+                      'report file.')
+
+        with open(path_to_report) as report_file:
             labels = report_file.readline()
             labels = labels.strip()
             label_pairing = {}
@@ -211,18 +221,29 @@ class Report:
                 models += 1
         return label_pairing, Models(models)
 
-    def getMetric(self, col_num=None, metric_name=None):
+    def getMetric(self, col_num=None, metric_name=None, from_mod=False):
         if col_num is None and metric_name is None:
             print("Report:getMetric: a column number or a metric name need" +
                   " to be specified to get a metric")
             sys.exit(1)
 
-        elif col_num is None:
-            col_num = self.metrics[metric_name] + 1
+        path_to_report = self.path + "/" + self.name
+        metrics = self.metrics
+        if (from_mod):
+            if (isThereAFile(self.path + "/mod_" + self.name)):
+                path_to_report = self.path + "/mod_" + self.name
+                metrics, _ = self.getReportInfo(from_mod=True)
+            else:
+                print('SimulationParser.getMetric Warning: mod_report not ' +
+                      'found, metrics will be retrieved from original ' +
+                      'report file.')
+
+        if (col_num is None):
+            col_num = metrics[metric_name] + 1
 
         metric_values = []
 
-        with open(self.path + "/" + self.name) as report_file:
+        with open(path_to_report) as report_file:
             report_file.readline()
             for i, line in enumerate(report_file):
                 if self.models.active[i]:
