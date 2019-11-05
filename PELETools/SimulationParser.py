@@ -393,6 +393,10 @@ class Trajectory:
                     links_list.append(linkBuilder(list_of_atoms))
                     list_of_atoms = []
                     current_model += 1
+                    continue
+
+                if (len(line) < 3):
+                    continue
 
                 if (not self.models.active[current_model]):
                     continue
@@ -400,8 +404,6 @@ class Trajectory:
                 if (containsLink(line, link_data)):
                     atom = atomBuilder(line)
                     list_of_atoms.append(atom)
-
-        links_list.append(linkBuilder(list_of_atoms))
 
         return links_list
 

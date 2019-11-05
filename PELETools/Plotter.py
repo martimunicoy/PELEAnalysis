@@ -348,16 +348,26 @@ class ScatterPlot(Plot):
         self._plot_builder()
         plt.show()
 
-    def save_to(self, path):
+    def save_to(self, path, high_resolution=False):
         """Save the plot to a path
 
         PARAMETERS
         ----------
         path : string
                Path where the plot will be saved
+        high_resolution : boolean
+                          Whether to save the plot in high resoltion or not.
+                          Default is false.
         """
+        dpi = 300
+        plot_format = 'png'
+        if (high_resolution):
+            dpi = 1200
+            plot_format = 'svg'
+
         self._plot_builder()
-        plt.savefig(path)
+        plt.tight_layout()
+        plt.savefig(path, format=plot_format, dpi=dpi)
 
     def _plot_builder(self):
         """Build the plot"""
