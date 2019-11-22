@@ -264,14 +264,12 @@ class LinkRMSD(Metric):
             for reference_name, reference_atom in \
                     self._reference_pairs.items():
                 if (reference_name not in simulation_pairs.keys()):
-                    print(simulation_pairs.keys())
                     raise NameError('Reference name ' +
                                     '\'{}\' '.format(reference_name) +
                                     'not found in trajectory pdb')
 
                 reference_atom = self._reference_pairs[reference_name]
                 simulation_atom = simulation_pairs[reference_name]
-                print(reference_atom.atom_name, simulation_atom.atom_name)
                 sum_of_squared_distances += \
                     self.__getSquaredDistanceBetweenAtoms(reference_atom,
                                                           simulation_atom)
