@@ -74,8 +74,11 @@ def parseArgs():
     optional.add_argument("-o", "--centroids_output_path", required=False,
                           metavar="PATH", type=str, default='centroids.pdb',
                           help="output path to save the centroids PDB file")
-    optional.add_argument("-k", "--normalize_densities", metavar="BOOLEAN",
-                          type=bool, default=False)
+    optional.add_argument("--normalize_densities", dest='normalize_densities',
+                          action='store_true', help="clustering densities " +
+                          "are normalized in the output files")
+
+    parser.set_defaults(normalize_densities=False)
 
     parser._action_groups.append(optional)
     args = parser.parse_args()
