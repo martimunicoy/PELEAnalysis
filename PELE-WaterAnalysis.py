@@ -87,6 +87,15 @@ def parseSimulation(control_file):
     return simulation
 
 
+def deactivateFirstModels(simulation):
+    print(" - First models are deactivated")
+
+    for report in simulation.iterateOverReports:
+        report.trajectory.models.inactivate(0)
+
+    simulation[0].trajectory.models.activate(0)
+
+
 def getWaterCoords(simulation, p_water):
     print(" - Retrieving water {} coordinates from \'{}\'".format(p_water,
           simulation.directories[0]))
@@ -97,33 +106,17 @@ def getWaterCoords(simulation, p_water):
 
     water_coords = []
 
-    """
-    for report in simulation.iterateOverReports:
-        print(report.name)
-        for atom in WATER_ATOMS:
-            for water in report.trajectory.getAtoms([chain, atom_id, atom]):
-                print(water.atom_name, water.coords)
-                for coord in water.coords.tolist():
-                    water_coords.append(coord)
-        break
-    """
-
-    """"""
     if not simulation[0].trajectory.isLinkThere(link_data):
         print("Error: link {} not found in trajectory ".format(link_data) +
               "{}".format(simulation.trajectories[0].path))
         sys.exit(1)
 
     for report in simulation.iterateOverReports:
-        print(report.name)
         for link in report.trajectory.getLinks(link_data):
             for atom in link:
-                print(atom.atom_name, atom.coords)
                 for coord in atom.coords.tolist():
                     water_coords.append(coord)
-        break
 
-    """"""
     print("  - Retrieved {} water coordinates".format(len(water_coords)))
 
     return water_coords
@@ -141,21 +134,36 @@ def saveBinaryCoordsFile(water_coords, output_file='coords.bin'):
     return output_file
 
 
-def main():
-    print(" +-----------------------------------------+")
-    print(" | Water Analysis Script for Adaptive PELE |")
-    print(" +-----------------------------------------+")
-    print(" ")
+def readBinaryCoordsFile(binary_file):
+    print(" - Reading water coordinates from \'{}\'".format(binary_file))
 
-    cf_path, bc_path = parseArgs()
+    with open(binary_file, 'rb') as f:
+        water_coords = array('d')
+        water_coords.fromstring(f.read())
+
+    print("  - Obtained \'{}\' water coordinates".format(len(water_coords)))
+
+    return water_coords
+
+
+def main(cf_path=None, bc_path=None):
+    if ((cf_path is None) and (bc_path is None)):
+        print(" +-----------------------------------------+")
+        print(" | Water Analysis Script for Adaptive PELE |")
+        print(" +-----------------------------------------+")
+        print(" ")
+
+        cf_path, bc_path = parseArgs()
 
     if bc_path is not None:
-        print(" Input binarycoords file \'{}\' will be ".format(bc_path) +
+        print(" - Input binarycoords file \'{}\' will be ".format(bc_path) +
               "used to retrieve coordinates from the perturbed water "
-              "molecule:")
+              "molecule")
+
+        water_coords = readBinaryCoordsFile(bc_path)
 
     elif cf_path is not None:
-        print(" Input controlfile \'{}\' will be used to ".format(cf_path) +
+        print(" - Input controlfile \'{}\' will be used to ".format(cf_path) +
               "retrieve coordinates from the perturbed water molecule and " +
               "they will be saved in a binarycoord file " +
               "\'{}\'".format('coords.bin'))
@@ -171,22 +179,23 @@ def main():
 
         simulation = parseSimulation(adaptive_cf)
 
+        deactivateFirstModels(simulation)
+
         water_coords = getWaterCoords(simulation, p_water)
 
+        bc_path = saveBinaryCoordsFile(water_coords)
+
+        main(bc_path=bc_path)
+
     else:
-        print(" Nothing to do")
-
-
-
-    #output_file = saveWaterCoords(simulation, perturbed_water)
-
-
+        print(" - Nothing to do")
 
     """
     with open('coords.bin', 'rb') as f:
         float_array = array('d')
         float_array.fromstring(f.read())
     """
+
 
 if __name__ == "__main__":
     main()
