@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import os
 import glob
 import sys
+from pathlib import Path
 
 
 # PELE imports
@@ -25,23 +26,88 @@ __email__ = "marti.municoy@bsc.es"
 
 
 # Classes
+class Epoch(object):
+    def __init__(self, path, list_of_reports):
+        self._path = Path(path)
+
+        if (not str(self.path.name).isdigit()):
+            print('Epoch Warning: epoch\'s path should point to a folder ' +
+                  'labeled with an integer. Path is {}'.format(self.path))
+
+        self._reports = list_of_reports
+
+    @property
+    def path(self):
+        return self._path
+
+    @property
+    def reports(self):
+        return self._reports
+
+    @property
+    def index(self):
+        return int(self._path.name)
+
+
+class EpochBuilder(object):
+    def __init__(self, report_name, trajectory_name, logfile_name):
+        self.report_name = report_name
+        self.trajectory_name = trajectory_name
+        self.logfile_name = logfile_name
+
+    def build(self, epoch_directory):
+        epoch_directory = Path(epoch_directory)
+
+        list_of_reports = []
+
+        for file in epoch_directory.iterdir():
+            if (file.name.startswith(self.report_name)):
+                # Get suffix
+                suf = file.name[len(self.report_name):]
+                # Remove underscore
+                suf = suf[1:]
+                # Check that suffix is a digit
+                if (suf.isdigit()):
+                    report = Report(file.absolute(), self)
+
+                    # Build report's trajectory
+                    trajectory_path = file.parent.absolute().joinpath(
+                        self.trajectory_name + '_' + suf)
+                    trajectory = Trajectory(trajectory_path, report)
+
+                    # Build report's logfile
+                    logfile_path = file.parent.absolute().joinpath(
+                        self.logfile_name + '_' + suf)
+                    logfile = Logfile(logfile_path, report)
+
+                    # Set them to the current report instance
+                    report.set_trajectory(trajectory)
+                    report.set_logfile(logfile)
+
+                    # Add new report to list
+                    list_of_reports.append(report)
+
+        return Epoch(epoch_directory, list_of_reports)
+
+
 class Simulation(object):
-    def __init__(self, directories, report_name="report_",
+    def __init__(self, output_directory, report_name="report_",
                  trajectory_name="trajectory_", logfile_name="logFile_"):
-        self._directories = directories
+        self._output_directory = Path(output_directory)
         self._report_name = report_name
         self._trajectory_name = trajectory_name
         self._logfile_name = logfile_name
-        self.reports = None
+        self._epochs = []
         self.iterateOverReports = None
         self.PDBHandler = PDBHandler(self)
 
-        if (type(self.directories) is not list):
-            self._directories = [self.directories, ]
+        if (not self.output_directory.exists()):
+            print("Simulation Warning: supplied output directory does not " +
+                  "exist")
 
     @property
-    def directories(self):
-        return self._directories
+    def output_directory(self):
+        return self._output_directory
 
     @property
     def report_name(self):
@@ -56,15 +122,28 @@ class Simulation(object):
         return self._logfile_name
 
     @property
+    def epochs(self):
+        return self._epochs
+
+    @property
     def type(self):
         return self._type
 
-    def initiateCounters(self):
-        if self.type is "Adaptive":
-            self.epochs = 0
+    @property
+    def n_epochs(self):
+        return len(self.epochs)
 
-        self.trajectories = 0
-        self.models = 0
+    @property
+    def n_trajectories(self):
+        return self._n_trajectories
+
+    @property
+    def n_models(self):
+        return self._n_models
+
+    def _initiateCounters(self):
+        self._n_trajectories = 0
+        self._n_models = 0
 
     def getOutputFiles(self):
         self._scanForOutputFiles()
@@ -104,39 +183,27 @@ class Simulation(object):
 
 
 class AdaptiveSimulation(Simulation):
-    def __init__(self, directories, report_name="run_report_",
+    def __init__(self, output_directory, report_name="run_report_",
                  trajectory_name="run_trajectory_", logfile_name="logFile_"):
         self._type = "Adaptive"
-        Simulation.__init__(self, directories, report_name, trajectory_name,
-                            logfile_name)
+        Simulation.__init__(self, output_directory, report_name,
+                            trajectory_name, logfile_name)
 
     def _scanForOutputFiles(self):
-        self.initiateCounters()
-        self.reports = {}
+        self._initiateCounters()
+        self._epochs = []
 
-        for directory in self.directories:
-            self.reports[directory] = {}
-            for subdir in glob.glob(directory + "*"):
-                subdir = os.path.basename(subdir)
-                if (subdir.isdigit()):
-                    self.epochs += 1
-                    self.reports[directory][subdir] = []
-                    self._getOutputFilesHere(
-                        directory, epoch=int(subdir))
-        print("  - A total of {} epochs and ".format(self.epochs) +
-              "{} reports were found.".format(self.trajectories))
+        epoch_builder = EpochBuilder(self.report_name, self.trajectory_name,
+                                     self.logfile_name)
 
-    def _getOutputFilesHere(self, directory, epoch=None):
-        path_to_reports = directory + str(epoch) + '/'
+        for subdir in self.output_directory.iterdir():
+            if (str(subdir.name).isdigit()):
+                epoch = epoch_builder.build(subdir)
+                # TODO count the number of trajectories and models of each epoch
+                self._epochs.append(epoch)
 
-        for file in glob.glob(path_to_reports + '/' + self.report_name + "*"):
-            report = Report(path_to_reports, os.path.basename(file),
-                            self.report_name, self.PDBHandler, epoch=epoch)
-            report.setTrajectoryFile(self.trajectory_name)
-            report.setLogFile(self.logfile_name)
-
-            self.reports[directory][str(epoch)].append(report)
-            self.trajectories += 1
+        print("  - A total of {} epochs and ".format(self.n_epochs) +
+              "{} reports were found.".format(self.n_trajectories))
 
 
 class PELESimulation(Simulation):
@@ -172,44 +239,55 @@ class PELESimulation(Simulation):
 
 
 class Report:
-    def __init__(self, path, name, report_name, PDBHandler, epoch=None):
-        self.path = path
-        self.name = name
-        self.epoch = epoch
-        self.trajectory_id = int(name.split(report_name)[1].split('.')[0])
-        self.trajectory = None
-        self.logfile = None
+    def __init__(self, path, epoch):
+        self._path = Path(path)
+        self._epoch = epoch
+        self._trajectory = None
+        self._logfile_name = None
         self.metrics, self.models = self.getReportInfo()
-        self.PDBHandler = PDBHandler
 
-    def setTrajectoryFile(self, trajectory_name):
-        name = trajectory_name + str(self.trajectory_id) + ".pdb"
-        if (not os.path.exists(self.path + "/" + name)):
-            print("Report:setTrajectoryFile: Warning, file {} ".format(name) +
-                  "not found")
-        else:
-            trajectory = Trajectory(name, self.path, self, self.epoch,
-                                    self.trajectory_id, self.models)
-            self.trajectory = trajectory
+    @property
+    def path(self):
+        return self._path.absolute()
 
-    def setLogFile(self, logfile_name):
-        name = logfile_name + str(self.trajectory_id)
-        if os.path.exists(self.path + "/" + name):
-            logfile = Logfile(name, self.path, self, self.epoch,
-                              self.trajectory_id)
-            self.logfile = logfile
+    @property
+    def name(self):
+        return self._path.name
+
+    @property
+    def epoch(self):
+        return self._epoch
+
+    @property
+    def id(self):
+        return int(self.name.split('_')[-1].split('.')[0])
+
+    @property
+    def trajectory(self):
+        return self._trajectory
+
+    @property
+    def logfile(self):
+        return self._logfile
+
+    def set_trajectory(self, trajectory):
+        self._trajectory = trajectory
+
+    def set_logfile(self, logfile):
+        self._logfile = logfile
 
     def getReportInfo(self, from_mod=False):
         models = 0
 
-        path_to_report = self.path + "/" + self.name
+        path_to_report = self.path
         if (from_mod):
-            if (isThereAFile(self.path + "/mod_" + self.name)):
-                path_to_report = self.path + "/mod_" + self.name
-            else:
+            path_to_report = self.path.parent.absolute().joinpath(
+                "mod_" + self.path.name)
+            if (not path_to_report.is_file()):
                 print('SimulationParser.getReportInfo Warning: mod_report ' +
                       'not found, metrics will be retrieved from original ' +
                       'report file.')
+                path_to_report = self.path
 
         with open(path_to_report) as report_file:
             labels = report_file.readline()
@@ -285,18 +363,25 @@ class Report:
 
 
 class Trajectory:
+    def __init__(self, path, report):
+        self._path = Path(path)
+        self._report = report
 
-    def __init__(self, name, path, report_file, epoch, trajectory_id,
-                 models):
-        self.name = name
-        self.path = path
-        self.report_file = report_file
-        self.epoch = epoch
-        self.trajectory_id = trajectory_id
-        self.models = models
-        self.PDBHandler = None
-        if (self.report_file is not None):
-            self.PDBHandler = self.report_file.PDBHandler
+    @property
+    def path(self):
+        return self._path.absolute()
+
+    @property
+    def name(self):
+        return self._path.name
+
+    @property
+    def report(self):
+        return self._report
+
+    @property
+    def models(self):
+        return self._report.models
 
     def isAtomThere(self, atom_data):
         _, _, atom_name = atom_data
@@ -452,12 +537,21 @@ class Trajectory:
 
 
 class Logfile:
-    def __init__(self, name, path, report_file, epoch, trajectory_id):
-        self.name = name
-        self.path = path
-        self.report_file = report_file
-        self.epoch = epoch
-        self.trajectory_id = trajectory_id
+    def __init__(self, path, report):
+        self._path = Path(path)
+        self._report = report
+
+    @property
+    def path(self):
+        return self._path.absolute()
+
+    @property
+    def name(self):
+        return self._path.name
+
+    @property
+    def report(self):
+        return self._report
 
 
 class Atom:
@@ -583,10 +677,8 @@ def containsAtom(line, atom_data):
 
 
 def simulationBuilderFromAdaptiveCF(adaptive_cf, pele_cf=None):
-    simulation_dir = os.path.dirname(adaptive_cf.path) + '/' + \
-        adaptive_cf.data["generalParams"]["outputPath"] + '/'
-
-    print(simulation_dir)
+    simulation_dir = adaptive_cf.path.parent.joinpath(
+        adaptive_cf.data["generalParams"]["outputPath"])
 
     report_name = None
     trajectory_name = None
@@ -596,12 +688,14 @@ def simulationBuilderFromAdaptiveCF(adaptive_cf, pele_cf=None):
         for command in pele_cf.data["commands"]:
             if command["commandType"] == "peleSimulation":
                 report_name = command["PELE_Output"]["reportPath"]
-                report_name = report_name.split('/')[-1] + '_'
+                report_name = report_name.split('/')[-1]
+                report_name = report_name.split('.')[0]
                 trajectory_name = command["PELE_Output"]["trajectoryPath"]
                 trajectory_name = trajectory_name.split('/')[-1]
-                trajectory_name = trajectory_name.split('.')[0] + '_'
+                trajectory_name = trajectory_name.split('.')[0]
         logfile_name = pele_cf.data["simulationLogPath"]
-        logfile_name = logfile_name.split('/')[-1].split('.')[0] + '_'
+        logfile_name = logfile_name.split('/')[-1]
+        logfile_name = logfile_name.split('.')[0]
 
     simulation = AdaptiveSimulation(simulation_dir,
                                     report_name=report_name,
@@ -618,11 +712,14 @@ def simulationBuilderFromPELECF(pele_cf):
             simulation_dir = os.path.dirname(pele_cf.path) + '/' + '/'.join(
                 command["PELE_Output"]["reportPath"].split('/')[:-1])
             report_name = command["PELE_Output"]["reportPath"]
-            report_name = report_name.split('/')[-1] + '_'
+            report_name = report_name.split('/')[-1]
+            report_name = report_name.split('.')[0]
             trajectory_name = command["PELE_Output"]["trajectoryPath"]
             trajectory_name = trajectory_name.split('/')[-1]
-            trajectory_name = trajectory_name.split('.')[0] + '_'
+            trajectory_name = trajectory_name.split('.')[0]
         logfile_name = pele_cf.data["simulationLogPath"]
+        logfile_name = logfile_name.split('/')[-1]
+        logfile_name = logfile_name.split('.')[0]
 
     simulation = PELESimulation(simulation_dir,
                                 report_name=report_name,
