@@ -4,12 +4,12 @@
 # Standard imports
 import os
 import json
+from pathlib import Path
 
 
 # PELE imports
 from .SimulationParser import simulationBuilderFromAdaptiveCF
 from .SimulationParser import simulationBuilderFromPELECF
-from .Utils import isThereAFile
 
 
 # Classes
@@ -56,7 +56,7 @@ class ControlFileBuilder(object):
 
 class ControlFile(object):
     def __init__(self, path, data):
-        self._path = path
+        self._path = Path(path)
         self._dir = os.path.dirname(path)
         self._data = data
 
@@ -87,17 +87,16 @@ class AdaptiveControlFile(ControlFile):
         return PDBs
 
     def getPELEControlFile(self):
-        pcf_path = os.path.dirname(self.path) + "/" + \
-            self.data["simulation"]["params"]["controlFile"]
-        pcf_path = os.path.abspath(pcf_path)
+        pcf_path = self.path.parent.joinpath(
+            self.data["simulation"]["params"]["controlFile"])
 
-        if not isThereAFile(pcf_path):
+        if (not pcf_path.is_file()):
             print("AdaptiveControlFile:getPELEControlFile: Warning, PELE " +
                   "control file not found")
             return None
 
         else:
-            builder = ControlFileBuilder(pcf_path)
+            builder = ControlFileBuilder(str(pcf_path.absolute()))
             return builder.build()
 
     def getSimulation(self):

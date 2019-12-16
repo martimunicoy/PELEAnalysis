@@ -586,6 +586,8 @@ def simulationBuilderFromAdaptiveCF(adaptive_cf, pele_cf=None):
     simulation_dir = os.path.dirname(adaptive_cf.path) + '/' + \
         adaptive_cf.data["generalParams"]["outputPath"] + '/'
 
+    print(simulation_dir)
+
     report_name = None
     trajectory_name = None
     logfile_name = None
