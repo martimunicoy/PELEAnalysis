@@ -27,14 +27,14 @@ __email__ = "marti.municoy@bsc.es"
 
 # Classes
 class Epoch(object):
-    def __init__(self, path, list_of_reports):
+    def __init__(self, path):
         self._path = Path(path)
 
         if (not str(self.path.name).isdigit()):
             print('Epoch Warning: epoch\'s path should point to a folder ' +
                   'labeled with an integer. Path is {}'.format(self.path))
 
-        self._reports = list_of_reports
+        self._reports = []
 
     @property
     def path(self):
@@ -60,6 +60,33 @@ class Epoch(object):
             n_models += report.trajectory.models_number
         return self._n_models
 
+    def __str__(self):
+        return 'PELE epoch {} at {}'.format(self.index,
+                                            self.path.parent)
+
+    def __iter__(self):
+        self._iter_index = 0
+        return self
+
+    def __next__(self):
+        if (self._iter_index == len(self.reports)):
+            raise StopIteration
+        else:
+            self._iter_index += 1
+            return self.reports[self._iter_index - 1]
+
+
+class DummyEpoch(Epoch):
+    def __init__(self, path):
+        super().__init__(path)
+
+    @property
+    def index(self):
+        return int(0)
+
+    def __str__(self):
+        return 'PELE dummy epoch at {}'.format(self.path.parent)
+
 
 class EpochBuilder(object):
     def __init__(self, report_name, trajectory_name, logfile_name):
@@ -68,49 +95,82 @@ class EpochBuilder(object):
         self.logfile_name = logfile_name
 
     def build(self, epoch_directory):
+        # Build epoch
         epoch_directory = Path(epoch_directory)
+        epoch = Epoch(epoch_directory)
 
-        list_of_reports = []
+        return self._build(epoch)
 
-        for file in epoch_directory.iterdir():
+    def _build(self, epoch):
+        # Build epoch's reports
+        for file in epoch.path.iterdir():
             if (file.name.startswith(self.report_name)):
                 # Get suffix
                 suf = file.name[len(self.report_name):]
+
                 # Remove underscore
                 suf = suf[1:]
+
                 # Check that suffix is a digit
                 if (suf.isdigit()):
-                    report = self._build_report(file)
+                    report = self._build_report(file, epoch)
+
+                    # Add new report to list
+                    self._insert_report_to_epoch(epoch, report)
 
                     # Build report's trajectory
-                    trajectory = self._build_trajectory(file, suf, report)
+                    trajectory = self._build_trajectory(report)
 
                     # Build report's logfile
-                    logfile = self._build_logfile(file, suf, report)
+                    logfile = self._build_logfile(report)
 
                     # Set them to the current report instance
                     report.set_trajectory(trajectory)
                     report.set_logfile(logfile)
 
-                    # Add new report to list
-                    list_of_reports.append(report)
+        return epoch
 
-        return Epoch(epoch_directory, list_of_reports)
+    def _build_report(self, file, epoch):
+        return Report(file.absolute(), epoch)
 
-    def _build_report(self, file):
-        return Report(file.absolute(), self)
+    def _build_trajectory(self, report):
+        trajectory_path = report.path.parent.absolute().joinpath(
+            self.trajectory_name + '_' + str(report.id) + '.pdb')
 
-    def _build_trajectory(self, file, suf, report):
-        trajectory_path = file.parent.absolute().joinpath(
-            self.trajectory_name + '_' + suf)
+        if (not trajectory_path.is_file()):
+            print('EpochBuilder.build Warning: trajectory for \'' +
+                  '{}\' not found at \'{}\''.format(report, trajectory_path))
+
+            return None
 
         return Trajectory(trajectory_path, report)
 
-    def _build_logfile(self, file, suf, report):
-        logfile_path = file.parent.absolute().joinpath(
-            self.logfile_name + '_' + suf)
+    def _build_logfile(self, report):
+        logfile_path = report.path.parent.absolute().joinpath(
+            self.logfile_name + '_' + str(report.id) + '.txt')
+
+        if (not logfile_path.is_file()):
+            print('EpochBuilder.build Warning: logfile for \'' +
+                  '{}\' not found at \'{}\''.format(report, logfile_path))
+
+            return None
 
         return Logfile(logfile_path, report)
+
+    def _insert_report_to_epoch(self, epoch, report):
+        epoch._reports.append(report)
+
+
+class DummyEpochBuilder(EpochBuilder):
+    def __init__(self, report_name, trajectory_name, logfile_name):
+        super().__init__(report_name, trajectory_name, logfile_name)
+
+    def build(self, epoch_directory):
+        # Build epoch
+        epoch_directory = Path(epoch_directory)
+        epoch = DummyEpoch(epoch_directory)
+
+        return self._build(epoch)
 
 
 class Simulation(object):
@@ -170,29 +230,17 @@ class Simulation(object):
 
     def getOutputFiles(self):
         self._scanForOutputFiles()
-        self.iterateOverReports = self.reportIterator(self.reports)
 
-    class reportIterator:
-        def __init__(self, reports):
-            self.reports = fromDictValuesToList(reports)
-            self.max_len = len(self.reports)
+    def __iter__(self):
+        self._iter_index = 0
+        return self
 
-        def __iter__(self):
-            self.current_index = 0
-            return self
-
-        def __next__(self):
-            if (self.current_index == self.max_len):
-                raise StopIteration
-            else:
-                self.current_index += 1
-                return self.reports[self.current_index - 1]
-
-        def __getitem__(self, key):
-            for i, report in enumerate(self.reports):
-                if (i == key):
-                    return report
-            raise IndexError
+    def __next__(self):
+        if (self._iter_index == len(self.epochs)):
+            raise StopIteration
+        else:
+            self._iter_index += 1
+            return self.epochs[self._iter_index - 1]
 
     # @TODO
     def plot(self, plot_type='ScatterPlot'):
@@ -238,16 +286,20 @@ class PELESimulation(Simulation):
                             logfile_name)
 
     def _scanForOutputFiles(self):
-        self.initiateCounters()
-        self.reports = {}
+        self._initiateCounters()
+        self._epochs = []
 
-        for directory in self.directories:
-            self.reports[directory] = {}
-            self.reports[directory][None] = []
-            self._getOutputFilesHere(directory)
+        epoch_builder = DummyEpochBuilder(self.report_name,
+                                          self.trajectory_name,
+                                          self.logfile_name)
+
+        epoch = epoch_builder.build(self.output_directory)
+        self._epochs.append(epoch)
+
+        self._n_trajectories = epoch.n_trajectories
 
         print("  - A total of {} reports were found.".format(
-            self.trajectories))
+            self.n_trajectories))
 
     def _getOutputFilesHere(self, directory):
         path_to_reports = directory
@@ -272,7 +324,7 @@ class Report:
 
     @property
     def path(self):
-        return self._path.absolute()
+        return self._path
 
     @property
     def name(self):
@@ -301,6 +353,13 @@ class Report:
     @property
     def models(self):
         return self._models
+
+    def __str__(self):
+        return 'PELE report {} at {}'.format(
+            self.id, self.path.parent.relative_to(os.getcwd()))
+
+    def set_epoch(self, epoch):
+        self._epoch = epoch
 
     def set_trajectory(self, trajectory):
         self._trajectory = trajectory
@@ -443,12 +502,15 @@ class Trajectory:
         atom_name = atom_name.replace("_", " ")
         atom_data[2] = atom_name
 
+        """
         if ((self.PDBHandler is not None) and
                 (self.PDBHandler.are_atoms_indexed)):
             return self._getAtomsFromIndexedAtoms(atom_data)
+        """
 
         return self._getAtomsFromNonIndexedAtoms(atom_data)
 
+    """
     def _getAtomsFromIndexedAtoms(self, atom_data):
         list_of_atoms = []
         model = 0
@@ -469,17 +531,19 @@ class Trajectory:
                     list_of_atoms.append(atomBuilder(line))
 
         return list_of_atoms
+    """
 
     def _getAtomsFromNonIndexedAtoms(self, atom_data):
         list_of_atoms = []
 
-        with open(self.path + "/" + self.name) as trajectory_file:
+        with open(self.path) as trajectory_file:
             for line in trajectory_file:
                 if containsAtom(line, atom_data):
                     list_of_atoms.append(atomBuilder(line))
 
         return list_of_atoms
 
+    """
     def isLinkThere(self, link_data):
         if (self.PDBHandler.system_size is None):
             self.PDBHandler.system_size = self.PDBHandler.getSystemSize()
@@ -493,14 +557,18 @@ class Trajectory:
                         break
 
         return False
+    """
 
     def getLinks(self, link_data):
+        """
         if ((self.PDBHandler is not None) and
                 (self.PDBHandler.are_atoms_indexed)):
             return self._getLinksFromIndexedAtoms(link_data)
+        """
 
         return self._getLinksFromNonIndexedAtoms(link_data)
 
+    """
     def _getLinksFromIndexedAtoms(self, link_data):
         links_list = []
         lines = \
@@ -527,6 +595,7 @@ class Trajectory:
         links_list.append(linkBuilder(list_of_atoms))
 
         return links_list
+    """
 
     def _getLinksFromNonIndexedAtoms(self, link_data):
         links_list = []
@@ -553,24 +622,35 @@ class Trajectory:
 
         return links_list
 
+    """
     def goToNextModelLine(self, file):
         for i in range(0, self.PDBHandler.getSystemSize()):
             file.readline()
         return file.readline()
+    """
 
     def writeModel(self, model_id, output_path):
         model_out = ""
         with open(self.path + "/" + self.name) as trajectory_file:
-            i = int(0)
-            line = trajectory_file.readline()
-            while(i != int(model_id)):
-                line = self.goToNextModelLine(trajectory_file)
-                i += 1
+            for line in trajectory_file:
+                if (line[:6] == 'MODEL '):
+                    try:
+                        _, model_number = line.split()
 
-            model_out += line
+                        if (model_number == model_id):
+                            break
+                    except ValueError:
+                        print('Trajectory.writeModel Warning: ' +
+                              'invalid MODEL line detected')
+            else:
+                print('Trajectory.writeModel Warning: ' +
+                      'model {} could not be written to '.format(model_id) +
+                      '{}'.format(output_path))
 
-            for i in range(0, self.PDBHandler.getSystemSize()):
-                model_out += trajectory_file.readline()
+            for line in trajectory_file:
+                if (line[:6] == 'ENDMDL'):
+                    break
+                model_out += line
 
         with open(output_path, 'w') as output_file:
             output_file.write(model_out)
