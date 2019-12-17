@@ -59,7 +59,6 @@ class Epoch(object):
         for report in self.reports:
             n_models += report.trajectory.models_number
         return self._n_models
-    
 
 
 class EpochBuilder(object):
@@ -81,17 +80,13 @@ class EpochBuilder(object):
                 suf = suf[1:]
                 # Check that suffix is a digit
                 if (suf.isdigit()):
-                    report = Report(file.absolute(), self)
+                    report = self._build_report(file)
 
                     # Build report's trajectory
-                    trajectory_path = file.parent.absolute().joinpath(
-                        self.trajectory_name + '_' + suf)
-                    trajectory = Trajectory(trajectory_path, report)
+                    trajectory = self._build_trajectory(file, suf, report)
 
                     # Build report's logfile
-                    logfile_path = file.parent.absolute().joinpath(
-                        self.logfile_name + '_' + suf)
-                    logfile = Logfile(logfile_path, report)
+                    logfile = self._build_logfile(file, suf, report)
 
                     # Set them to the current report instance
                     report.set_trajectory(trajectory)
@@ -101,6 +96,21 @@ class EpochBuilder(object):
                     list_of_reports.append(report)
 
         return Epoch(epoch_directory, list_of_reports)
+
+    def _build_report(self, file):
+        return Report(file.absolute(), self)
+
+    def _build_trajectory(self, file, suf, report):
+        trajectory_path = file.parent.absolute().joinpath(
+            self.trajectory_name + '_' + suf)
+
+        return Trajectory(trajectory_path, report)
+
+    def _build_logfile(self, file, suf, report):
+        logfile_path = file.parent.absolute().joinpath(
+            self.logfile_name + '_' + suf)
+
+        return Logfile(logfile_path, report)
 
 
 class Simulation(object):
@@ -212,10 +222,9 @@ class AdaptiveSimulation(Simulation):
         for subdir in self.output_directory.iterdir():
             if (str(subdir.name).isdigit()):
                 epoch = epoch_builder.build(subdir)
+                self._epochs.append(epoch)
 
                 self._n_trajectories += epoch.n_trajectories
-
-                self._epochs.append(epoch)
 
         print("  - A total of {} epochs and ".format(self.n_epochs) +
               "{} reports were found.".format(self.n_trajectories))
@@ -258,8 +267,8 @@ class Report:
         self._path = Path(path)
         self._epoch = epoch
         self._trajectory = None
-        self._logfile_name = None
-        self.metrics, self.models = self.getReportInfo()
+        self._logfile = None
+        self._metrics, self._models = self.getReportInfo()
 
     @property
     def path(self):
@@ -285,6 +294,14 @@ class Report:
     def logfile(self):
         return self._logfile
 
+    @property
+    def metrics(self):
+        return self._metrics
+
+    @property
+    def models(self):
+        return self._models
+
     def set_trajectory(self, trajectory):
         self._trajectory = trajectory
 
@@ -292,7 +309,7 @@ class Report:
         self._logfile = logfile
 
     def getReportInfo(self, from_mod=False):
-        models = 0
+        models = []
 
         path_to_report = self.path
         if (from_mod):
@@ -308,23 +325,31 @@ class Report:
             labels = report_file.readline()
             labels = labels.strip()
             label_pairing = {}
+
             for col, label in enumerate(labels.split("    ")):
                 label_pairing[label] = col
-            for line in report_file:
-                models += 1
-        return label_pairing, Models(models)
+
+            for i, _ in enumerate(report_file):
+                model = Model(model_id=i)
+                models.append(model)
+
+        return label_pairing, models
 
     def getMetric(self, col_num=None, metric_name=None, from_mod=False):
-        if col_num is None and metric_name is None:
-            print("Report:getMetric: a column number or a metric name need" +
-                  " to be specified to get a metric")
-            sys.exit(1)
+        if (col_num is None and metric_name is None):
+            raise SyntaxError('Report:getMetric: a column number or a ' +
+                              'metric name need to be specified to get a ' +
+                              'metric')
 
-        path_to_report = self.path + "/" + self.name
+        path_to_report = self.path.absolute()
         metrics = self.metrics
+
         if (from_mod):
-            if (isThereAFile(self.path + "/mod_" + self.name)):
-                path_to_report = self.path + "/mod_" + self.name
+            path_to_report = self.path.parent.absolute().joinpath(
+                'mod_' + self.name)
+
+            if (path_to_report.is_file()):
+                path_to_report = self.path.joinpath('mod_' + self.name)
                 metrics, _ = self.getReportInfo(from_mod=True)
             else:
                 print('SimulationParser.getMetric Warning: mod_report not ' +
@@ -339,7 +364,7 @@ class Report:
         with open(path_to_report) as report_file:
             report_file.readline()
             for i, line in enumerate(report_file):
-                if self.models.active[i]:
+                if self.models[i].active:
                     line = line.strip()
                     value = float(line.split("    ")[col_num - 1])
                     metric_values.append(value)
@@ -347,7 +372,7 @@ class Report:
         return metric_values
 
     def addMetric(self, metric_name, values, try_to_append=False):
-        input_report_path = self.path + "/" + self.name
+        input_report_path = self.path.joinpath(self.name)
         if (try_to_append):
             if (isThereAFile(self.path + "/mod_" + self.name)):
                 input_report_path = self.path + "/mod_" + self.name
