@@ -48,6 +48,19 @@ class Epoch(object):
     def index(self):
         return int(self._path.name)
 
+    @property
+    def n_trajectories(self):
+        return len(self.reports)
+
+    @property
+    def n_models(self):
+        n_models = 0
+
+        for report in self.reports:
+            n_models += report.trajectory.models_number
+        return self._n_models
+    
+
 
 class EpochBuilder(object):
     def __init__(self, report_name, trajectory_name, logfile_name):
@@ -199,7 +212,9 @@ class AdaptiveSimulation(Simulation):
         for subdir in self.output_directory.iterdir():
             if (str(subdir.name).isdigit()):
                 epoch = epoch_builder.build(subdir)
-                # TODO count the number of trajectories and models of each epoch
+
+                self._n_trajectories += epoch.n_trajectories
+
                 self._epochs.append(epoch)
 
         print("  - A total of {} epochs and ".format(self.n_epochs) +
@@ -554,54 +569,24 @@ class Logfile:
         return self._report
 
 
-class Atom:
-    def __init__(self, chain, residue_id, atom_name):
-        self.chain = chain
-        self.residue_id = residue_id
-        self.atom_name = atom_name
+class Model:
+    def __init__(self, model_id):
+        self._id = model_id
+        self._active = True
 
+    @property
+    def id(self):
+        return self._id
 
-class Models:
+    @property
+    def active(self):
+        return self._active
 
-    def __init__(self, models_number):
-        self.number = models_number
-        self.active = []
-        for i in range(0, self.number):
-            self.active.append(True)
-        self.current_model = 0
+    def inactivate(self):
+        self._active = False
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.current_model == self.number:
-            self.current_model = 0
-            raise StopIteration
-        else:
-            self.current_model += 1
-            return self.active[self.current_model - 1]
-
-    def inactivate(self, model_number):
-        try:
-            self.active[model_number] = False
-        except IndexError:
-            print("Models:inactivate: model {}".format(model_number) +
-                  " could not be deactivated")
-
-    def activate(self, model_number):
-        try:
-            self.active[model_number] = True
-        except IndexError:
-            print("Models:activate: model {}".format(model_number) +
-                  " could not be activated")
-
-    def activateAll(self):
-        for i in range(0, len(self.active)):
-            self.active[i] = True
-
-    def deactivateAll(self):
-        for i in range(0, len(self.active)):
-            self.active[i] = False
+    def activate(self):
+        self._active = True
 
 
 # Functions
