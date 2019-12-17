@@ -284,8 +284,9 @@ def obtain_water_data_from(control_file_path, number_of_processors,
 
     print('   - Listing reports...')
     list_of_reports = []
-    for report in sim.iterateOverReports:
-        list_of_reports.append(report)
+    for epoch in sim:
+        for report in epoch:
+            list_of_reports.append(report)
 
     print('   - Retrieving data using {} '.format(number_of_processors) +
           'processors...')
