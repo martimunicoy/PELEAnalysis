@@ -408,12 +408,12 @@ class Report:
                 'mod_' + self.name)
 
             if (path_to_report.is_file()):
-                path_to_report = self.path.joinpath('mod_' + self.name)
                 metrics, _ = self.getReportInfo(from_mod=True)
             else:
                 print('SimulationParser.getMetric Warning: mod_report not ' +
                       'found, metrics will be retrieved from original ' +
                       'report file.')
+                path_to_report = self.path.absolute()
 
         if (col_num is None):
             col_num = metrics[metric_name] + 1
@@ -431,38 +431,33 @@ class Report:
         return metric_values
 
     def addMetric(self, metric_name, values, try_to_append=False):
-        input_report_path = self.path.joinpath(self.name)
+        input_report_path = self.path
         if (try_to_append):
-            if (isThereAFile(self.path + "/mod_" + self.name)):
-                input_report_path = self.path + "/mod_" + self.name
+            input_report_path = self.path.parent.joinpath("mod_" + self.name)
+            if (not input_report_path.is_file()):
+                input_report_path = self.path
 
         with open(input_report_path) as report_file:
             data = report_file.read()
 
         lines = data.split("\n")
+
         new_lines = []
+        new_lines.append(lines[0] + "{}    ".format(metric_name))
 
-        j = 0
+        for line, value, model in zip(lines[1:], values, self.models):
+            if (model.active):
+                new_lines.append(line + "{0:.4f}    ".format(value))
 
-        for i, line in enumerate(lines):
-            if i == 0:
-                line += "{}    ".format(metric_name)
-            elif i <= self.models.number:
-                if self.models.active[i - 1]:
-                    line += "{0:.4f}    ".format(values[i - 1 - j])
-                else:
-                    j += 1
-            else:
-                break
-            new_lines.append(line)
+        output_report_path = self.path.parent.joinpath("mod_" + self.name)
 
-        with open(self.path + "/mod_" + self.name, "w") as report_file:
+        with open(output_report_path, "w") as report_file:
             for line in new_lines:
                 report_file.write(line + "\n")
 
 
 class Trajectory:
-    def __init__(self, path, report):
+    def __init__(self, path, report=None):
         self._path = Path(path)
         self._report = report
 
@@ -600,7 +595,7 @@ class Trajectory:
     def _getLinksFromNonIndexedAtoms(self, link_data):
         links_list = []
 
-        with open(self.path + "/" + self.name) as trajectory_file:
+        with open(self.path) as trajectory_file:
             list_of_atoms = []
             current_model = 0
             for i, line in enumerate(trajectory_file):
@@ -613,7 +608,7 @@ class Trajectory:
                 if (len(line) < 3):
                     continue
 
-                if (not self.models.active[current_model]):
+                if (not self.models[current_model].active):
                     continue
 
                 if (containsLink(line, link_data)):
