@@ -4,9 +4,13 @@
 # Imports
 import os
 import argparse as ap
+import numpy as np
 from multiprocessing import cpu_count, Pool
 from functools import partial
 from sklearn import cluster
+from collections import defaultdict
+from copy import copy
+from pathlib import Path
 
 from PELETools import ControlFileParser as cfp
 from PELETools import SimulationParser as sp
@@ -38,6 +42,9 @@ def parseArgs():
     water_ids: list of strings
                each string defines a water link that will be tracked and used
                in the clusterization method.
+    ref_coords : list of numpy arrays
+                 reference coordinates that will be used to calculate the
+                 number of water matches.
     cluster_radius : int
                      radius that defines the width of each cluster.
     first_steps_to_ignore : int
@@ -45,9 +52,55 @@ def parseArgs():
     centroids_output_path : string
                             path for the output PDB file containing the
                             centroids.
-    normalize : boolean
-                whether to normalize the density values or not.
+    normalize_densities : boolean
+                          whether to normalize the density values or not.
     """
+
+    def parse_coords(list_of_coords):
+        """ It parses a 3D vector of coordinates
+
+        PARAMETERS
+        ----------
+        list_of_coords : list of lists
+                         list of 3D coordinates to parse from the command-line.
+
+        RETURNS
+        -------
+        parsed_coords : list of floats
+                        list of parsed 3D coordinates.
+        """
+
+        parsed_coords = []
+
+        for coords in list_of_coords:
+            parsed_coords.append(np.array(coords))
+
+        return parsed_coords
+
+    def check_output_path(path):
+        """ It checks the output path to save resulting centroids
+
+        PARAMETERS
+        ----------
+        path : string
+               path for the output PDB file containing the
+               centroids.
+
+        RETURNS
+        -------
+        path : Path object
+               path for the output PDB file containing the
+               centroids.
+        """
+        # Check output path
+        path = Path(path)
+        if (path.is_dir()):
+            path = path.joinpath('centroids.pdb')
+        elif (not path.is_file()):
+            print('write_centroids Warning: invalid path to \'{}\''.format(
+                path))
+
+        return path
 
     parser = ap.ArgumentParser()
     optional = parser._action_groups.pop()
@@ -66,10 +119,15 @@ def parseArgs():
                           "link to track in the clusterization. More than " +
                           "one water can be selected by adding multiple " +
                           "water id arguments", default=None)
+    optional.add_argument("-r", "--reference_coordinates",
+                          metavar="CHAIN_ID_RESIDUE_NUMBER",
+                          action='append', dest='ref_coords', nargs=3,
+                          type=float, help="reference coordinates that will " +
+                          "be used to calculate the number of water matches")
     optional.add_argument("-f", "--first_steps_to_ignore", metavar="INT",
                           type=int, help="Number of first steps that will " +
                           "be filtered out", default=1)
-    optional.add_argument("-r", "--cluster_radius", metavar="FLOAT",
+    optional.add_argument("-R", "--cluster_radius", metavar="FLOAT",
                           type=float, default=2)
     optional.add_argument("-o", "--centroids_output_path", required=False,
                           metavar="PATH", type=str, default='centroids.pdb',
@@ -83,9 +141,12 @@ def parseArgs():
     parser._action_groups.append(optional)
     args = parser.parse_args()
 
+    parsed_ref_coords = parse_coords(args.ref_coords)
+    centroids_output_path = check_output_path(args.centroids_output_path)
+
     return args.control_file, args.number_of_processors, args.water_ids, \
-        args.first_steps_to_ignore, args.cluster_radius, \
-        args.centroids_output_path, args.normalize_densities
+        parsed_ref_coords, args.first_steps_to_ignore, args.cluster_radius, \
+        centroids_output_path, args.normalize_densities
 
 
 def parse_water_ids(water_ids):
@@ -459,14 +520,14 @@ def print_density_results(densities, reference_clusters=[]):
     reference_clusters : list
                          list of clusters that belong to the reference.
     """
-    print('Ref', 'Cluster n.', 'Probability')
+    print('     Ref', 'Cluster n.', 'Probability')
     for cluster_n, cluster_density in densities.items():
         if cluster_density < 0.01:
             continue
         if (cluster_n in reference_clusters):
-            print(' *    ', end='')
+            print('      *    ', end='')
         else:
-            print('      ', end='')
+            print('           ', end='')
         print('{:3d}        {:5.3f}'.format(int(cluster_n),
                                             float(cluster_density)))
 
@@ -522,13 +583,131 @@ def write_centroids(estimator, densities, centroids_output_path,
             writer(f, i + 1, centroid, norm_densities[i])
 
 
+def calculate_matches(list_of_reports, atom_reports, atom_models, estimator,
+                      results, ref_coords):
+    """ It calculates the number of matches for each model sampled in the
+    PELE simulation.
+
+    PARAMETERS
+    ----------
+    list_of_reports : list
+                      list of all the reports that were retrieved from the PELE
+                      simulation that has been read.
+    atom_reports : list
+                   list of ordered atom reports.
+    atom_models : list
+                  list of ordered models.
+    estimator : sklearn.cluster.MeanShift object
+                clusterization implementation that clusterizes through the
+                MeanShift method.
+    results : list
+              list with the results of the clusterization. Each element is the
+              cluster in which each atom belongs.
+    parsed_coords : list of floats
+                    List of parsed 3D coordinates
+
+    RETURNS
+    -------
+    matches_dict : dictionary of matches
+                   dictionary that relates each Report object to the
+                   corresponding number of matches.
+    """
+
+    def fulfill_condition(cluster_ids, reference_clusters):
+        """ It checks if the match condition is fulfilled.
+
+        PARAMETERS
+        ----------
+        cluster_ids : list of integers
+                      water cluster ids
+        reference_clusters : list of integers
+                             list of reference cluster ids
+
+        RETURNS
+        -------
+        matches : integer
+                  number of matches that fulfill the matching condition.
+        """
+        copied_reference_clusters = copy(reference_clusters)
+        common_matches = []
+
+        for cluster_id in cluster_ids:
+            if (cluster_id in copied_reference_clusters):
+                copied_reference_clusters.remove(cluster_id)
+                common_matches.append(cluster_id)
+
+        return len(common_matches)
+
+    # Assign clusters to reference coordinates
+    reference_clusters = []
+    for ref_coord in ref_coords:
+        reference_clusters += estimator.predict([ref_coord]).tolist()
+
+    # Initialize variables to compute matches
+    clusters_dict = {}
+    matches_dict = {}
+
+    # Initialize matches_dict
+    for report in list_of_reports:
+        clusters_dict[report] = defaultdict(list)
+
+    # Assign cluster ids
+    for i, cluster_id in enumerate(results):
+        clusters_dict[atom_reports[i]][atom_models[i]].append(cluster_id)
+
+    # Compute matches and replace dictionary values for them
+    for report, models in clusters_dict.items():
+        matches_dict[report] = defaultdict(list)
+        for model, cluster_ids in models.items():
+            result = fulfill_condition(cluster_ids,
+                                       reference_clusters)
+            matches_dict[report][model] = result
+
+    return matches_dict
+
+
+def append_matches_to_reports(matches_dict, first_steps_to_ignore):
+    """ It appends the number of matches to each PELE report.
+
+    PARAMETERS
+    ----------
+    matches_dict : dictionary of matches
+                   dictionary that relates each Report object to the
+                   corresponding number of matches.
+    first_steps_to_ignore : int
+                            number of first steps that will be filtered out.
+
+
+    """
+
+    # Add matches to reports
+    for report in matches_dict.keys():
+        n_steps = report.getMetric(2)
+
+        matches_to_add = []
+        for n_step in n_steps:
+            if (n_step < first_steps_to_ignore):
+                matches_to_add.append(0)
+
+        for model_num in sorted(matches_dict[report].keys()):
+            matches_to_add.append(matches_dict[report][model_num])
+
+        report.addMetric('WaterMatchs', matches_to_add)
+
+
 def main():
     """Main function. It is called when this script is the main program
     called by the interpreter.
     """
 
+    # Initial print
+    print("+---------------------------------+")
+    print("|    Water Clustering for PELE    |")
+    print("+---------------------------------+")
+    print("")
+
     # Parse command-line arguments
-    control_file_path, number_of_processors, water_ids, \
+    control_file_path, number_of_processors, water_ids, ref_coords, \
         first_steps_to_ignore, cluster_radius, centroids_output_path, \
         normalize_densities = parseArgs()
 
@@ -570,6 +749,16 @@ def main():
     print(' - Writing centroids')
     write_centroids(estimator, densities, centroids_output_path,
                     normalize_densities)
+
+    if (ref_coords is not None):
+        print(' - Calculating the number of matches for each model')
+        append_matches_to_reports(calculate_matches(list_of_reports,
+                                                    atom_reports,
+                                                    atom_models,
+                                                    estimator,
+                                                    results,
+                                                    ref_coords),
+                                  first_steps_to_ignore)
 
 
 if __name__ == "__main__":
