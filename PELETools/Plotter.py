@@ -308,6 +308,9 @@ class ScatterPlot(Plot):
         elif (colormap == 'reducedPurples'):
             purples = plt.cm.get_cmap('Purples', 512)
             self.cmap = ListedColormap(purples(np.linspace(0.95, 0.4, 256)))
+        elif (colormap == 'reducedOranges'):
+            oranges = plt.cm.get_cmap('Oranges', 512)
+            self.cmap = ListedColormap(oranges(np.linspace(0.95, 0.4, 256)))
         else:
             raise NameError('Unknown colormap name: \'{}\''.format(colormap))
 
@@ -653,7 +656,8 @@ class ScatterDensityPlot(Plot):
         self.colors = {'blue': ('lightskyblue', 'royalblue'),
                        'red': ('lightcoral', 'firebrick'),
                        'green': ('palegreen', 'seagreen'),
-                       'purple': ('mediumpurple', 'rebeccapurple')}
+                       'purple': ('mediumpurple', 'rebeccapurple'),
+                       'orange': ('darkorange', 'orangered')}
         self.cmap = sns.dark_palette(self.colors[self.color][1], reverse=True,
                                      as_cmap=True)
 
