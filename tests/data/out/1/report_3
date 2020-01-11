@@ -1,0 +1,3 @@
+#Task    Step    numberOfAcceptedPeleSteps    currentEnergy    Binding Energy    sasaLig    rmsd    H2O-Lig_distance    Lig-Phe38_distance    waterBEnergy    
+1    0    0    -6482.01    -23.5545    0.204189    16.528    16.1816    23.9765    0.722942    
+1    1    1    -6502.61    -31.0248    0.168852    15.4629    14.3264    25.8846    3.00657    

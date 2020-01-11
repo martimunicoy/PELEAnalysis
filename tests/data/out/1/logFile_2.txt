@@ -1,0 +1,277 @@
+PELE version 1.5.0.${BUILD_TAG}
+* Complex
+Summary:
+Number of proteins: 1
+Number of DNA chains: 0
+Number of RNA chains: 0
+Number of Ligands: 2
+
+Loaded residues: 159
+All links
+
+Number of loaded atoms: 2524
+
+Topology Summary: 
+Number of parameterized bonds: 2544
+Number of parameterized angles: 4580
+Number of parameterized dihedrals: 6361
+Number of parameterized improper dihedrals: 510
+Number of 14 pairs: 6613
+
+Chain A_0 charge: -13.000
+Chain B_0 charge: 0.000
+Chain L_0 charge: -0.000
+Total charge: -13.000
+
+
+* Solvent.
+solventType: VDGBNP
+useDebyeLength: true
+ionicStrength: 0.15
+
+
+* Potential.
+ForceField: OPLS2005
+
+nonBondingVersion: NB_GEN_MSCALE
+shortNeutrumNeutrum: 10
+shortChargedNeutrum: 10
+shortChargedCharged: 15
+longNeutrumNeutrum: 15
+longChargedNeutrum: 20
+longChargedCharged: 30
+
+
+Simulation Permanent Constraints: Number of constraints: 17
+HarmonicConstraintOnAtom A:1:GLU_:_CA_ to coordinates (29.372, 31.15, 47.255) equilibriumDistance: 0 k: 2.5
+HarmonicConstraintOnAtom A:10:PHE_:_CA_ to coordinates (33.814, 32.554, 39.22) equilibriumDistance: 0 k: 0.5
+HarmonicConstraintOnAtom A:20:HIE_:_CA_ to coordinates (48.386, 27.143, 51.597) equilibriumDistance: 0 k: 0.5
+HarmonicConstraintOnAtom A:30:GLU_:_CA_ to coordinates (56.317, 10.235, 41.967) equilibriumDistance: 0 k: 0.5
+HarmonicConstraintOnAtom A:40:LEU_:_CA_ to coordinates (55.082, 22.894, 44.867) equilibriumDistance: 0 k: 0.5
+HarmonicConstraintOnAtom A:50:LYS_:_CA_ to coordinates (44.844, 37.591, 32.485) equilibriumDistance: 0 k: 0.5
+HarmonicConstraintOnAtom A:60:ARG_:_CA_ to coordinates (63.355, 19.31, 51.175) equilibriumDistance: 0 k: 0.5
+HarmonicConstraintOnAtom A:70:VAL_:_CA_ to coordinates (53.182, 33.785, 36.375) equilibriumDistance: 0 k: 0.5
+HarmonicConstraintOnAtom A:80:TYR_:_CA_ to coordinates (45.229, 28.843, 32.915) equilibriumDistance: 0 k: 0.5
+HarmonicConstraintOnAtom A:90:PHE_:_CA_ to coordinates (44.982, 23.846, 34.601) equilibriumDistance: 0 k: 0.5
+HarmonicConstraintOnAtom A:100:PHE_:_CA_ to coordinates (39.261, 26.194, 49.966) equilibriumDistance: 0 k: 0.5
+HarmonicConstraintOnAtom A:110:ASP_:_CA_ to coordinates (56.389, 15.869, 24.819) equilibriumDistance: 0 k: 0.5
+HarmonicConstraintOnAtom A:120:TYR_:_CA_ to coordinates (44.624, 24.676, 48.567) equilibriumDistance: 0 k: 0.5
+HarmonicConstraintOnAtom A:130:ILE_:_CA_ to coordinates (36.69, 19.078, 52.104) equilibriumDistance: 0 k: 0.5
+HarmonicConstraintOnAtom A:140:GLU_:_CA_ to coordinates (36.343, 10.333, 39.807) equilibriumDistance: 0 k: 0.5
+HarmonicConstraintOnAtom A:150:ASP_:_CA_ to coordinates (47.902, 14.746, 52.271) equilibriumDistance: 0 k: 0.5
+HarmonicConstraintOnAtom A:157:CYS_:_CA_ to coordinates (58.714, 25.596, 55.717) equilibriumDistance: 0 k: 2.5
+
+Task Permanent Constraints
+Number of constraints: 0
+
+ANM Permanent Constraints
+Number of constraints: 0
+
+Atom Pulling Constraints
+Number of constraints: 0
+
+Constraints on Hydrogen Bonds
+Number of constraints: 0
+
+Perturbed Atom Set COM Constraints
+Number of constraints: 0
+
+Waters Constraints
+Number of constraints: 0
+
+
+
+
+
+* Pele parameters:
+temperature: 1000
+anmFrequency: 2
+minimizationFrequency: 1
+waterPerturbationFrequency: 1
+sideChainPredictionFrequency: 2
+minimizationRegionRadius: 1000
+sideChainPredictionRegionRadius: 4
+numberOfTopSideSelectedLinks: 0
+topSideRadius: 0
+activateProximityDetection: true, proximityDistance: 5
+perturbationCOMConstraintConstant: 1
+numberOfPeleSteps: 4
+
+* Movement step components:
+----------------------------
+** naive
+Parameters:
+gridResolution: 10
+overlapFactor: 0.65
+rotationScalingFactor: 0.5
+rotationRangeFactor: 0.25
+translationRange: 1
+TranslationRangeType: centered translation modulus generator
+TranslationDirection: STEERED
+steeringMode: random
+steeringUpdateFrequency: 1
+atLeastOneSelectedTrial: false
+numberOfStericTrials: 100
+numberOfTrials: 10
+ 
+
+
+** WaterPerturbation
+Parameters:
+gridResolution: 10
+overlapFactor: 0.78
+rotationScalingFactor: 0.5
+rotationRangeFactor: 1
+translationRange: 5
+TranslationRangeType: centered translation modulus generator
+TranslationDirection: RANDOM
+atLeastOneSelectedTrial: false
+numberOfStericTrials: 10000
+watersToPerturbPerStep: -1
+temperature: 1000
+
+
+** ANM:
+ANM Cartesian algorithm:
+Direction selection strategy:
+directionGeneration: random
+
+Mixing strategy:
+modesMixingOption: mixMainModeWithOthersModes
+mainModeWeightForMixModes: 0.75
+
+Magnitude calculation
+moveMagnitudeGeneration: noRandom
+
+Normal modes: 
+Modes calculated using Lapack
+cutoff: 12
+
+Modes picking strategy:
+pickingCase: RANDOM_MODE
+
+ANM parameters:
+numberOfModes: 6
+thermalScaling: true
+eigenUpdateFrequency: 1000000
+modesChangeFrequency: 3
+relaxationSpringConstant: 0.5
+Number of nodes: 157
+Node list: 
+A:1:GLU_:_CA_ A:2:GLU_:_CA_ A:3:ALA_:_CA_ A:4:SER_:_CA_ A:5:SER_:_CA_ 
+A:6:THR_:_CA_ A:7:GLY_:_CA_ A:8:ARG_:_CA_ A:9:ASN_:_CA_ A:10:PHE_:_CA_ 
+A:11:ASN_:_CA_ A:12:VAL_:_CA_ A:13:GLU_:_CA_ A:14:LYS_:_CA_ A:15:ILE_:_CA_ 
+A:16:ASN_:_CA_ A:17:GLY_:_CA_ A:18:GLU_:_CA_ A:19:TRP_:_CA_ A:20:HIE_:_CA_ 
+A:21:THR_:_CA_ A:22:ILE_:_CA_ A:23:ILE_:_CA_ A:24:LEU_:_CA_ A:25:ALA_:_CA_ 
+A:26:SER_:_CA_ A:27:ASP_:_CA_ A:28:LYS_:_CA_ A:29:ARG_:_CA_ A:30:GLU_:_CA_ 
+A:31:LYS_:_CA_ A:32:ILE_:_CA_ A:33:GLU_:_CA_ A:34:ASP_:_CA_ A:35:ASN_:_CA_ 
+A:36:GLY_:_CA_ A:37:ASN_:_CA_ A:38:PHE_:_CA_ A:39:ARG_:_CA_ A:40:LEU_:_CA_ 
+A:41:PHE_:_CA_ A:42:LEU_:_CA_ A:43:GLU_:_CA_ A:44:GLN_:_CA_ A:45:ILE_:_CA_ 
+A:46:HIE_:_CA_ A:47:VAL_:_CA_ A:48:LEU_:_CA_ A:49:GLU_:_CA_ A:50:LYS_:_CA_ 
+A:51:SER_:_CA_ A:52:LEU_:_CA_ A:53:VAL_:_CA_ A:54:LEU_:_CA_ A:55:LYS_:_CA_ 
+A:56:PHE_:_CA_ A:57:HID_:_CA_ A:58:THR_:_CA_ A:59:VAL_:_CA_ A:60:ARG_:_CA_ 
+A:61:ASP_:_CA_ A:62:GLU_:_CA_ A:63:GLU_:_CA_ A:64:CYS_:_CA_ A:65:SER_:_CA_ 
+A:66:GLU_:_CA_ A:67:LEU_:_CA_ A:68:SER_:_CA_ A:69:MET_:_CA_ A:70:VAL_:_CA_ 
+A:71:ALA_:_CA_ A:72:ASP_:_CA_ A:73:LYS_:_CA_ A:74:THR_:_CA_ A:75:GLU_:_CA_ 
+A:76:LYS_:_CA_ A:77:ALA_:_CA_ A:78:GLY_:_CA_ A:79:GLU_:_CA_ A:80:TYR_:_CA_ 
+A:81:SER_:_CA_ A:82:VAL_:_CA_ A:83:THR_:_CA_ A:84:TYR_:_CA_ A:85:ASP_:_CA_ 
+A:86:GLY_:_CA_ A:87:PHE_:_CA_ A:88:ASN_:_CA_ A:89:THR_:_CA_ A:90:PHE_:_CA_ 
+A:91:THR_:_CA_ A:92:ILE_:_CA_ A:93:PRO_:_CA_ A:94:LYS_:_CA_ A:95:THR_:_CA_ 
+A:96:ASP_:_CA_ A:97:TYR_:_CA_ A:98:ASP_:_CA_ A:99:ASN_:_CA_ A:100:PHE_:_CA_ 
+A:101:LEU_:_CA_ A:102:MET_:_CA_ A:103:ALA_:_CA_ A:104:HIE_:_CA_ A:105:LEU_:_CA_ 
+A:106:ILE_:_CA_ A:107:ASN_:_CA_ A:108:GLU_:_CA_ A:109:LYS_:_CA_ A:110:ASP_:_CA_ 
+A:111:GLY_:_CA_ A:112:GLU_:_CA_ A:113:THR_:_CA_ A:114:PHE_:_CA_ A:115:GLN_:_CA_ 
+A:116:LEU_:_CA_ A:117:MET_:_CA_ A:118:GLY_:_CA_ A:119:LEU_:_CA_ A:120:TYR_:_CA_ 
+A:121:GLY_:_CA_ A:122:ARG_:_CA_ A:123:GLU_:_CA_ A:124:PRO_:_CA_ A:125:ASP_:_CA_ 
+A:126:LEU_:_CA_ A:127:SER_:_CA_ A:128:SER_:_CA_ A:129:ASP_:_CA_ A:130:ILE_:_CA_ 
+A:131:LYS_:_CA_ A:132:GLU_:_CA_ A:133:ARG_:_CA_ A:134:PHE_:_CA_ A:135:ALA_:_CA_ 
+A:136:GLN_:_CA_ A:137:LEU_:_CA_ A:138:CYS_:_CA_ A:139:GLU_:_CA_ A:140:GLU_:_CA_ 
+A:141:HID_:_CA_ A:142:GLY_:_CA_ A:143:ILE_:_CA_ A:144:LEU_:_CA_ A:145:ARG_:_CA_ 
+A:146:GLU_:_CA_ A:147:ASN_:_CA_ A:148:ILE_:_CA_ A:149:ILE_:_CA_ A:150:ASP_:_CA_ 
+A:151:LEU_:_CA_ A:152:SER_:_CA_ A:153:ASN_:_CA_ A:154:ALA_:_CA_ A:155:ASN_:_CA_ 
+A:156:ARG_:_CA_ A:157:CYS_:_CA_A:1:GLU_:_CA_ A:2:GLU_:_CA_ A:3:ALA_:_CA_ A:4:SER_:_CA_ A:5:SER_:_CA_ A:6:THR_:_CA_ A:7:GLY_:_CA_ A:8:ARG_:_CA_ A:9:ASN_:_CA_ A:10:PHE_:_CA_ A:11:ASN_:_CA_ A:12:VAL_:_CA_ A:13:GLU_:_CA_ A:14:LYS_:_CA_ A:15:ILE_:_CA_ A:16:ASN_:_CA_ A:17:GLY_:_CA_ A:18:GLU_:_CA_ A:19:TRP_:_CA_ A:20:HIE_:_CA_ A:21:THR_:_CA_ A:22:ILE_:_CA_ A:23:ILE_:_CA_ A:24:LEU_:_CA_ A:25:ALA_:_CA_ A:26:SER_:_CA_ A:27:ASP_:_CA_ A:28:LYS_:_CA_ A:29:ARG_:_CA_ A:30:GLU_:_CA_ A:31:LYS_:_CA_ A:32:ILE_:_CA_ A:33:GLU_:_CA_ A:34:ASP_:_CA_ A:35:ASN_:_CA_ A:36:GLY_:_CA_ A:37:ASN_:_CA_ A:38:PHE_:_CA_ A:39:ARG_:_CA_ A:40:LEU_:_CA_ A:41:PHE_:_CA_ A:42:LEU_:_CA_ A:43:GLU_:_CA_ A:44:GLN_:_CA_ A:45:ILE_:_CA_ A:46:HIE_:_CA_ A:47:VAL_:_CA_ A:48:LEU_:_CA_ A:49:GLU_:_CA_ A:50:LYS_:_CA_ A:51:SER_:_CA_ A:52:LEU_:_CA_ A:53:VAL_:_CA_ A:54:LEU_:_CA_ A:55:LYS_:_CA_ A:56:PHE_:_CA_ A:57:HID_:_CA_ A:58:THR_:_CA_ A:59:VAL_:_CA_ A:60:ARG_:_CA_ A:61:ASP_:_CA_ A:62:GLU_:_CA_ A:63:GLU_:_CA_ A:64:CYS_:_CA_ A:65:SER_:_CA_ A:66:GLU_:_CA_ A:67:LEU_:_CA_ A:68:SER_:_CA_ A:69:MET_:_CA_ A:70:VAL_:_CA_ A:71:ALA_:_CA_ A:72:ASP_:_CA_ A:73:LYS_:_CA_ A:74:THR_:_CA_ A:75:GLU_:_CA_ A:76:LYS_:_CA_ A:77:ALA_:_CA_ A:78:GLY_:_CA_ A:79:GLU_:_CA_ A:80:TYR_:_CA_ A:81:SER_:_CA_ A:82:VAL_:_CA_ A:83:THR_:_CA_ A:84:TYR_:_CA_ A:85:ASP_:_CA_ A:86:GLY_:_CA_ A:87:PHE_:_CA_ A:88:ASN_:_CA_ A:89:THR_:_CA_ A:90:PHE_:_CA_ A:91:THR_:_CA_ A:92:ILE_:_CA_ A:93:PRO_:_CA_ A:94:LYS_:_CA_ A:95:THR_:_CA_ A:96:ASP_:_CA_ A:97:TYR_:_CA_ A:98:ASP_:_CA_ A:99:ASN_:_CA_ A:100:PHE_:_CA_ A:101:LEU_:_CA_ A:102:MET_:_CA_ A:103:ALA_:_CA_ A:104:HIE_:_CA_ A:105:LEU_:_CA_ A:106:ILE_:_CA_ A:107:ASN_:_CA_ A:108:GLU_:_CA_ A:109:LYS_:_CA_ A:110:ASP_:_CA_ A:111:GLY_:_CA_ A:112:GLU_:_CA_ A:113:THR_:_CA_ A:114:PHE_:_CA_ A:115:GLN_:_CA_ A:116:LEU_:_CA_ A:117:MET_:_CA_ A:118:GLY_:_CA_ A:119:LEU_:_CA_ A:120:TYR_:_CA_ A:121:GLY_:_CA_ A:122:ARG_:_CA_ A:123:GLU_:_CA_ A:124:PRO_:_CA_ A:125:ASP_:_CA_ A:126:LEU_:_CA_ A:127:SER_:_CA_ A:128:SER_:_CA_ A:129:ASP_:_CA_ A:130:ILE_:_CA_ A:131:LYS_:_CA_ A:132:GLU_:_CA_ A:133:ARG_:_CA_ A:134:PHE_:_CA_ A:135:ALA_:_CA_ A:136:GLN_:_CA_ A:137:LEU_:_CA_ A:138:CYS_:_CA_ A:139:GLU_:_CA_ A:140:GLU_:_CA_ A:141:HID_:_CA_ A:142:GLY_:_CA_ A:143:ILE_:_CA_ A:144:LEU_:_CA_ A:145:ARG_:_CA_ A:146:GLU_:_CA_ A:147:ASN_:_CA_ A:148:ILE_:_CA_ A:149:ILE_:_CA_ A:150:ASP_:_CA_ A:151:LEU_:_CA_ A:152:SER_:_CA_ A:153:ASN_:_CA_ A:154:ALA_:_CA_ A:155:ASN_:_CA_ A:156:ARG_:_CA_ A:157:CYS_:_CA_ 
+
+Minimizer Truncated Newton algorithm:
+Parameters:
+EnergyDifference: 1
+MinimumRMS: 0.1
+MaximumMinimizationIterations: 1
+MaximumNewtonIterations: 30
+nonBondingListUpdatedEachMinStep: false
+sgbUpdated: false
+alphaUpdated: false
+iterationsBetweenNBlistLongUpdate: 2
+
+* Relaxation step components:
+----------------------------
+** Side Chain Prediction:
+Zhexin Algorithm:
+Parameters:
+discardHighEnergySolutions: false
+resolution: 30
+initialOverlapFactor: 0.75
+minimalOverlapFactor: 0.7
+numberOfIterations: 1
+randomize: false
+
+
+Minimizer Null minimizer algorithm:
+No parameters for the minimizer.
+
+** Relaxation constrained minimization
+Minimizer Truncated Newton algorithm:
+Parameters:
+EnergyDifference: 1
+MinimumRMS: 0.1
+MaximumMinimizationIterations: 3
+MaximumNewtonIterations: 65
+nonBondingListUpdatedEachMinStep: true
+sgbUpdated: true
+alphaUpdated: false
+iterationsBetweenNBlistLongUpdate: 2
+
+
+
+
+[New Step] Step: 1
+Perturbation Ef: -6361.66 Ei: -6482.88 dE: 121.222 dt: 6.50477 s
+Water perturbation: Ef: -6422.61 Ei: -6422.61 dE: 0 dt: 3.77682 s
+ANM Ef: -6474.63 Ei: -6422.61 dE: -52.0196 dt: 7.84582 s
+Side Chain Prediction Ef: -8004.14 Ei: -6474.63 dE: -1529.51 dt: 8.98508 s
+Minimization Ef: -6491.42 Ei: -8004.14 dE: 1512.72 dt: 12.2209 s
+
+Metropolis Ef: -6493.01 Ei: -6482.88 dE: -10.1333 Probability: 1 Accepted Step: true
+[Energy] Task: 1, Step: 1, Final energy:  -6493.01
+Accepted!
+Total step time: 48.1799 s
+
+
+[New Step] Step: 2
+Perturbation Ef: -6309.56 Ei: -6493.01 dE: 183.459 dt: 30.9846 s
+Water perturbation: Ef: -6357.76 Ei: -6365.96 dE: 8.20039 dt: 5.14433 s
+Minimization Ef: -6473.75 Ei: -6357.76 dE: -115.991 dt: 17.3815 s
+
+Metropolis Ef: -6474.76 Ei: -6493.01 dE: 18.25 Probability: 0.000102696 Accepted Step: false
+Total step time: 59.3877 s
+
+
+[New Step] Step: 3
+Perturbation Ef: -6417.95 Ei: -6493.01 dE: 75.0617 dt: 10.6617 s
+Water perturbation: Ef: -6464.37 Ei: -6475.61 dE: 11.2441 dt: 5.44113 s
+ANM Ef: -6461.36 Ei: -6464.37 dE: 3.00705 dt: 6.56112 s
+Side Chain Prediction Ef: -8027.77 Ei: -6461.36 dE: -1566.41 dt: 14.3118 s
+Minimization Ef: -6477.98 Ei: -8027.77 dE: 1549.79 dt: 19.3718 s
+
+Metropolis Ef: -6479.28 Ei: -6493.01 dE: 13.7325 Probability: 0.000997295 Accepted Step: false
+Total step time: 63.7118 s
+
+
+[New Step] Step: 4
+Perturbation Ef: -6430.88 Ei: -6493.01 dE: 62.1343 dt: 12.5912 s
+Water perturbation: Ef: -6487.39 Ei: -6487.39 dE: 0 dt: 5.83333 s
+Minimization Ef: -6497.59 Ei: -6487.39 dE: -10.1969 dt: 18.4371 s
+
+Metropolis Ef: -6498.35 Ei: -6493.01 dE: -5.33851 Probability: 1 Accepted Step: true
+[Energy] Task: 1, Step: 4, Final energy:  -6498.35
+Accepted!
+Total step time: 47.1572 s
