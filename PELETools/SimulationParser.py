@@ -7,9 +7,6 @@ import os
 import glob
 import sys
 from pathlib import Path
-from multiprocessing import Pool
-from multiprocessing import Array as SharedArray
-import tqdm
 
 # External imports
 import mdtraj as md
@@ -148,7 +145,9 @@ class EpochBuilder(object):
 
             return None
 
-        return Trajectory(trajectory_path, report)
+        md_traj = md.load(str(trajectory_path))
+
+        return Trajectory(trajectory_path, md_traj.xyz, md_traj.top, report)
 
     def _build_logfile(self, report):
         logfile_path = report.path.parent.absolute().joinpath(
@@ -233,33 +232,8 @@ class Simulation(object):
         self._n_trajectories = 0
         self._n_models = 0
 
-    def _parallel_trajectory_parser(self, report):
-        if (not report.trajectory.is_parsed):
-            report.trajectory.parse()
-
-        return report.trajectory
-
     def getOutputFiles(self):
         self._scanForOutputFiles()
-
-    def parse_trajectories(self, n_processors=2):
-        indexed_reports = []
-        for epoch in self.epochs:
-            for report in epoch:
-                indexed_reports.append(report)
-                print(report)
-
-        with Pool(n_processors) as pool:
-            parsed_trajectories = list(tqdm.tqdm(
-                pool.map(self._parallel_trajectory_parser, indexed_reports),
-                total=len(indexed_reports)))
-
-        # Note that each report in indexed_reports corresponds to the
-        # trajectory in parsed_trajectories which has the same index.
-
-        for i, trajectory in enumerate(parsed_trajectories):
-            indexed_reports[i].trajectory._parsed_traj = \
-                trajectory._parsed_traj
 
     def __iter__(self):
         self._iter_index = 0
@@ -486,11 +460,11 @@ class Report:
                 report_file.write(line + "\n")
 
 
-class Trajectory():
-    def __init__(self, path, report=None):
+class Trajectory(md.Trajectory):
+    def __init__(self, path, xyz, top, report=None):
+        super().__init__(xyz, top)
         self._path = Path(path)
         self._report = report
-        self._parsed_traj = None
 
     @property
     def path(self):
@@ -508,21 +482,178 @@ class Trajectory():
     def models(self):
         return self._report.models
 
-    @property
-    def is_parsed(self):
-        return self._parsed_traj is not None
+    def isAtomThere(self, atom_data):
+        _, _, atom_name = atom_data
+        atom_name = atom_name.replace("_", " ")
+        atom_data[2] = atom_name
 
-    @property
-    def parsed_data(self):
-        if (not self.is_parsed):
-            raise AttributeError('Trajectory from report ' +
-                                 '{} '.format(self.report) +
-                                 'has not been parsed yet')
+        with open(self.path + "/" + self.name) as trajectory_file:
+            for i, line in enumerate(trajectory_file):
+                if (containsAtom(line, atom_data)):
+                    return True
+                if (self.PDBHandler is not None):
+                    if (i > self.PDBHandler.system_size):
+                        break
 
-        return self._parsed_traj
+        return False
 
-    def parse(self):
-        self._parsed_traj = md.load(str(self.path))
+    def getAtoms(self, atom_data):
+        _, _, atom_name = atom_data
+        atom_name = atom_name.replace("_", " ")
+        atom_data[2] = atom_name
+
+        """
+        if ((self.PDBHandler is not None) and
+                (self.PDBHandler.are_atoms_indexed)):
+            return self._getAtomsFromIndexedAtoms(atom_data)
+        """
+
+        return self._getAtomsFromNonIndexedAtoms(atom_data)
+
+    """
+    def _getAtomsFromIndexedAtoms(self, atom_data):
+        list_of_atoms = []
+        model = 0
+        atom_line = self.PDBHandler.getAtomLineInPDB(atom_data)
+
+        with open(self.path + "/" + self.name) as trajectory_file:
+
+            for i, line in enumerate(trajectory_file):
+                if (int(i / (self.PDBHandler.system_size + 1)) != model):
+                    model += 1
+
+                if (not self.models.active[model]):
+                    continue
+
+                current_line = i - (self.PDBHandler.system_size + 1) * model
+
+                if (current_line == atom_line):
+                    list_of_atoms.append(atomBuilder(line))
+
+        return list_of_atoms
+    """
+
+    def _getAtomsFromNonIndexedAtoms(self, atom_data):
+        list_of_atoms = []
+
+        with open(self.path) as trajectory_file:
+            for line in trajectory_file:
+                if containsAtom(line, atom_data):
+                    list_of_atoms.append(atomBuilder(line))
+
+        return list_of_atoms
+
+    """
+    def isLinkThere(self, link_data):
+        if (self.PDBHandler.system_size is None):
+            self.PDBHandler.system_size = self.PDBHandler.getSystemSize()
+
+        with open(self.path + "/" + self.name) as trajectory_file:
+            if (self.PDBHandler is not None):
+                for i, line in enumerate(trajectory_file):
+                    if (containsLink(line, link_data)):
+                        return True
+                    if (i > self.PDBHandler.system_size):
+                        break
+
+        return False
+    """
+
+    def getLinks(self, link_data):
+        """
+        if ((self.PDBHandler is not None) and
+                (self.PDBHandler.are_atoms_indexed)):
+            return self._getLinksFromIndexedAtoms(link_data)
+        """
+
+        return self._getLinksFromNonIndexedAtoms(link_data)
+
+    """
+    def _getLinksFromIndexedAtoms(self, link_data):
+        links_list = []
+        lines = \
+            self.PDBHandler.getLinkLinesInPDB(link_data).values()
+
+        with open(self.path + "/" + self.name) as trajectory_file:
+            list_of_atoms = []
+            model = 0
+            for i, line in enumerate(trajectory_file):
+                if (self.PDBHandler.currentModel(i) != model):
+                    if self.models.active[model]:
+                        links_list.append(linkBuilder(list_of_atoms))
+                        list_of_atoms = []
+                    model += 1
+
+                if (not self.models.active[model]):
+                    continue
+
+                current_line = i - (self.PDBHandler.system_size + 1) * model
+
+                if (current_line in lines):
+                    list_of_atoms.append(atomBuilder(line))
+
+        links_list.append(linkBuilder(list_of_atoms))
+
+        return links_list
+    """
+
+    def _getLinksFromNonIndexedAtoms(self, link_data):
+        links_list = []
+
+        with open(self.path) as trajectory_file:
+            list_of_atoms = []
+            current_model = 0
+            for i, line in enumerate(trajectory_file):
+                if (line[:6] == 'ENDMDL'):
+                    links_list.append(linkBuilder(list_of_atoms))
+                    list_of_atoms = []
+                    current_model += 1
+                    continue
+
+                if (len(line) < 3):
+                    continue
+
+                if (not self.models[current_model].active):
+                    continue
+
+                if (containsLink(line, link_data)):
+                    atom = atomBuilder(line)
+                    list_of_atoms.append(atom)
+
+        return links_list
+
+    """
+    def goToNextModelLine(self, file):
+        for i in range(0, self.PDBHandler.getSystemSize()):
+            file.readline()
+        return file.readline()
+    """
+
+    def writeModel(self, model_id, output_path):
+        model_out = ""
+        with open(self.path + "/" + self.name) as trajectory_file:
+            for line in trajectory_file:
+                if (line[:6] == 'MODEL '):
+                    try:
+                        _, model_number = line.split()
+
+                        if (model_number == model_id):
+                            break
+                    except ValueError:
+                        print('Trajectory.writeModel Warning: ' +
+                              'invalid MODEL line detected')
+            else:
+                print('Trajectory.writeModel Warning: ' +
+                      'model {} could not be written to '.format(model_id) +
+                      '{}'.format(output_path))
+
+            for line in trajectory_file:
+                if (line[:6] == 'ENDMDL'):
+                    break
+                model_out += line
+
+        with open(output_path, 'w') as output_file:
+            output_file.write(model_out)
 
 
 class Logfile:
