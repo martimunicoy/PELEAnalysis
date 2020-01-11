@@ -8,8 +8,6 @@ import glob
 import sys
 from pathlib import Path
 
-# External imports
-import mdtraj as md
 
 # PELE imports
 from . import Plotter
@@ -145,9 +143,7 @@ class EpochBuilder(object):
 
             return None
 
-        md_traj = md.load(str(trajectory_path))
-
-        return Trajectory(trajectory_path, md_traj.xyz, md_traj.top, report)
+        return Trajectory(trajectory_path, report)
 
     def _build_logfile(self, report):
         logfile_path = report.path.parent.absolute().joinpath(
@@ -460,9 +456,8 @@ class Report:
                 report_file.write(line + "\n")
 
 
-class Trajectory(md.Trajectory):
-    def __init__(self, path, xyz, top, report=None):
-        super().__init__(xyz, top)
+class Trajectory:
+    def __init__(self, path, report=None):
         self._path = Path(path)
         self._report = report
 
