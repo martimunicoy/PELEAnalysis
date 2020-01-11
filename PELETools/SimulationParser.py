@@ -11,6 +11,8 @@ from multiprocessing import Pool
 from multiprocessing import Array as SharedArray
 import tqdm
 
+# External imports
+import mdtraj as md
 
 # PELE imports
 from . import Plotter
@@ -484,7 +486,7 @@ class Report:
                 report_file.write(line + "\n")
 
 
-class Trajectory:
+class Trajectory():
     def __init__(self, path, report=None):
         self._path = Path(path)
         self._report = report
