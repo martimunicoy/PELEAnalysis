@@ -7,6 +7,7 @@ import sys
 
 # FEP_PELE imports
 from .Molecules import atomBuilder, linkBuilder, chainBuilder, modelBuilder
+from .Molecules import Model, Chain, Link, Atom
 from .Topology import buildTopologyFromLinkTemplate
 from .Utils import checkFile, normalize, norm
 
@@ -337,21 +338,49 @@ class PDBModifier(object):
 
 class PDBWriter(object):
     def __init__(self, pdb_object):
+        """PDB Writer
+
+        PARAMETERS
+        ----------
+        pdb_object : PDBObject instance
+                     it defines either a Model, Chain, Link or Atom that will
+                     be written to the PDB.
+        """
         self._pdb = pdb_object
 
     def write(self, output_path):
         with open(output_path, 'w') as f:
-            chains = sorted(self._pdb.chains)
+            if (isinstance(self._pdb, Model)):
+                chains = sorted(self._pdb.chains)
+                self._write_model(f, chains)
 
-            for chain in chains:
-                links = sorted(chain.list_of_links)
+            elif (isinstance(self._pdb, Chain)):
+                links = sorted(self._pdb.list_of_links)
+                self._write_chain(f, links)
 
-                for link in links:
-                    atoms = sorted(link.list_of_atoms)
+            elif (isinstance(self._pdb, Link)):
+                atoms = sorted(self._pdb.list_of_atoms)
+                self._write_link(f, atoms)
 
-                    for atom in atoms:
-                        f.write(self._getAtomLine(atom))
-                f.write(self._getTERLine())
+            elif (isinstance(self._pdb, Atom)):
+                self._write_atom()
+
+    def _write_model(self, f, chains):
+        for chain in chains:
+            self._write_chain(f, chain)
+            f.write(self._getTERLine())
+
+    def _write_chain(self, f, links):
+        for link in links:
+            atoms = sorted(link.list_of_atoms)
+            self._write_link(f, atoms)
+
+    def _write_link(self, f, atoms):
+        for atom in atoms:
+            self._write_atom(f, atom)
+
+    def _write_atom(self, f, atom):
+        f.write(self._getAtomLine(atom))
 
     def _getAtomLine(self, atom):
         return "{}".format(atom.atom_type) + \
