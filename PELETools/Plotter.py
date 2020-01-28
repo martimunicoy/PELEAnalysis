@@ -68,6 +68,7 @@ class Plot(object):
         self.z_max = z_max
         self.z_min = z_min
         self.first_steps_to_ignore = first_steps_to_ignore
+        self.v_lines = {}
 
         # Set axis names
         for axis in self.axes.values():
@@ -118,6 +119,9 @@ class Plot(object):
 
             if (z_min is None):
                 self.z_min = min(self.axes['z'].values)
+
+    def add_vertical_line(self, x, *args, **kwargs):
+        self.v_lines[x] = (args, kwargs)
 
 
 class Axis(object):
@@ -401,6 +405,10 @@ class ScatterPlot(Plot):
             cbar = plt.colorbar(sc, drawedges=False)
             cbar.ax.set_ylabel(self.axes['z'].name)
 
+        # Draw vertical lines
+        for x, (args, kwargs) in self.v_lines.items():
+            ax.axvline(x, *args, **kwargs)
+
 
 class InteractiveScatterPlot(Plot):
     """Interactive Scatter Plot class"""
@@ -510,6 +518,10 @@ class InteractiveScatterPlot(Plot):
                             arrowprops=dict(arrowstyle="->"))
         annot.set_visible(False)
 
+        # Draw vertical lines
+        for x, (args, kwargs) in self.v_lines.items():
+            ax.axvline(x, *args, **kwargs)
+
         # Activate the colorbar only if the Z axis contains data to plot
         if (self.axes['z'].values is not None):
             cbar = plt.colorbar(sc, drawedges=False)
@@ -607,6 +619,10 @@ class DensityPlot(Plot):
         ax = sns.kdeplot(self.axes['x'].values, self.axes['y'].values,
                          cmap="Reds", shade=True, shade_lowest=False)
 
+        # Draw vertical lines
+        for x, (args, kwargs) in self.v_lines.items():
+            ax.axvline(x, *args, **kwargs)
+
 
 class ScatterDensityPlot(Plot):
     """Scatter with denisty plot class"""
@@ -654,10 +670,10 @@ class ScatterDensityPlot(Plot):
 
         self.color = 'blue'
         self.colors = {'blue': ('lightskyblue', 'royalblue'),
-                       'red': ('lightcoral', 'firebrick'),
+                       'red': ('#f5bcbc', 'firebrick'),
                        'green': ('palegreen', 'seagreen'),
-                       'purple': ('mediumpurple', 'rebeccapurple'),
-                       'orange': ('darkorange', 'orangered')}
+                       'purple': ('#d9c6ec', '#8000ff'),
+                       'orange': ('#facc9e', '#ff6600')}
         self.cmap = sns.dark_palette(self.colors[self.color][1], reverse=True,
                                      as_cmap=True)
 
@@ -826,6 +842,10 @@ class ScatterDensityPlot(Plot):
 
         ax.set_axis_labels(self.axes['x'].name, self.axes['y'].name,
                            fontsize=16)
+
+        # Draw vertical lines
+        for x, (args, kwargs) in self.v_lines.items():
+            ax.ax_joint.axvline(x, *args, **kwargs)
 
         return ax
 
