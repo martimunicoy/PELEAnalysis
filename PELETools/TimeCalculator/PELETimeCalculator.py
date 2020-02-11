@@ -2,7 +2,7 @@
 import argparse as ap
 
 # Repo Imports
-from TimeCalculator import *
+from PELETools.TimeCalculator.TimeCalculator import *
 
 
 def str2bool(v):
