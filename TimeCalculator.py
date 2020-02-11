@@ -6,7 +6,11 @@ import math
 class TimeCalculator:
 
     def __init__(self, output_simulation_path):
-        self.__output_simulation_path = output_simulation_path
+        self._output_simulation_path = output_simulation_path
+
+    @property
+    def output_simulation_path(self):
+        return self._output_simulation_path
 
     def calculate_step_time(self):
         occurrences, file_time, variance_file_time = self.__calculate_times_for_step()
@@ -40,7 +44,7 @@ class TimeCalculator:
 
     def __calculate_times_for_step(self):
         occurrences, file_time, variance_file_time = 0, 0, 0
-        file_list = glob.glob(self.__output_simulation_path)
+        file_list = glob.glob(self._output_simulation_path)
         for file in file_list:
             with open(file) as opened_file:
                 file_lines = opened_file.read().split("\n")
@@ -51,7 +55,7 @@ class TimeCalculator:
 
     def __calculate_times_for_perturbation(self):
         occurrences, file_time, variance_file_time = 0, 0, 0
-        file_list = glob.glob(self.__output_simulation_path)
+        file_list = glob.glob(self._output_simulation_path)
         for file in file_list:
             with open(file) as opened_file:
                 file_lines = opened_file.read().split("\n")
@@ -64,7 +68,7 @@ class TimeCalculator:
 
     def __calculate_times_for_ANM(self):
         occurrences, file_time, variance_file_time = 0, 0, 0
-        file_list = glob.glob(self.__output_simulation_path)
+        file_list = glob.glob(self._output_simulation_path)
         for file in file_list:
             with open(file) as opened_file:
                 file_lines = opened_file.read().split("\n")
@@ -77,7 +81,7 @@ class TimeCalculator:
 
     def __calculate_times_for_side_chain(self):
         occurrences, file_time, variance_file_time = 0, 0, 0
-        file_list = glob.glob(self.__output_simulation_path)
+        file_list = glob.glob(self._output_simulation_path)
         for file in file_list:
             with open(file) as opened_file:
                 file_lines = opened_file.read().split("\n")
@@ -90,7 +94,7 @@ class TimeCalculator:
 
     def __calculate_times_for_minimization(self):
         occurrences, file_time, variance_file_time = 0, 0, 0
-        file_list = glob.glob(self.__output_simulation_path)
+        file_list = glob.glob(self._output_simulation_path)
         for file in file_list:
             with open(file) as opened_file:
                 file_lines = opened_file.read().split("\n")
