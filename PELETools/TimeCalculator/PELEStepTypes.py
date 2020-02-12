@@ -10,9 +10,7 @@ class Step(TimeStructure):
 
     def __str__(self):
         return "PELE " + self.name + " time: \n" + \
-               "---Average time: " + str(self.calculate_average()) + "\n" \
-               "---Variance time: " + str(self.calculate_variance()) + "\n" \
-               "---Standard Deviation: " + str(self.calculate_standard_deviation()) + "\n"
+               "---Average time: " + str(self.calculate_average()) + "\n"
 
 
 class Perturbation(TimeStructure):
@@ -23,9 +21,7 @@ class Perturbation(TimeStructure):
 
     def __str__(self):
         return self.name + " time: \n" + \
-               "---Average time: " + str(self.calculate_average()) + "\n"\
-               "---Variance time: " + str(self.calculate_variance()) + "\n"\
-               "---Standard Deviation: " + str(self.calculate_standard_deviation()) + "\n"
+               "---Average time: " + str(self.calculate_average()) + "\n"
 
 
 class ANM(TimeStructure):
@@ -36,9 +32,7 @@ class ANM(TimeStructure):
 
     def __str__(self):
         return self.name + " time: \n" + \
-               "---Average time: " + str(self.calculate_average()) + "\n"\
-               "---Variance time: " + str(self.calculate_variance()) + "\n"\
-               "---Standard Deviation: " + str(self.calculate_standard_deviation()) + "\n"
+               "---Average time: " + str(self.calculate_average()) + "\n"
 
 
 class SideChain(TimeStructure):
@@ -49,9 +43,7 @@ class SideChain(TimeStructure):
 
     def __str__(self):
         return self.name + " time: \n" + \
-               "---Average time: " + str(self.calculate_average()) + "\n"\
-               "---Variance time: " + str(self.calculate_variance()) + "\n"\
-               "---Standard Deviation: " + str(self.calculate_standard_deviation()) + "\n"
+               "---Average time: " + str(self.calculate_average()) + "\n"
 
 
 class Minimization(TimeStructure):
@@ -62,9 +54,7 @@ class Minimization(TimeStructure):
 
     def __str__(self):
         return self.name + " time: \n" + \
-               "---Average time: " + str(self.calculate_average()) + "\n"\
-               "---Variance time: " + str(self.calculate_variance()) + "\n"\
-               "---Standard Deviation: " + str(self.calculate_standard_deviation()) + "\n"
+               "---Average time: " + str(self.calculate_average()) + "\n"
 
 
 PELE_STEP_TYPES = [Step, Perturbation, ANM, SideChain, Minimization]

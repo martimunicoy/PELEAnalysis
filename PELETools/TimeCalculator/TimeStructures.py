@@ -53,10 +53,3 @@ class TimeStructure:
 
     def calculate_average(self):
         return self.total_time / self.occurrences
-
-    def calculate_variance(self):
-        return self.total_time_variance / self.occurrences
-
-    def calculate_standard_deviation(self):
-        return math.sqrt(self.total_time_variance)
-
