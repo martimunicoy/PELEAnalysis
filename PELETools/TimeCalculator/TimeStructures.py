@@ -3,6 +3,10 @@ import math
 
 class TimeStructure:
 
+    name = ""
+    name_to_search_in_log_file = ""
+    time_position_in_log_file = 0
+
     def __init__(self):
         self._total_time = 0
         self._total_time_variance = 0
@@ -31,15 +35,21 @@ class TimeStructure:
 
     @total_time_variance.setter
     def total_time_variance(self, variance_time):
-        self._total_time_variance += variance_time
+        self._total_time_variance = variance_time
 
     @occurrences.setter
     def occurrences(self, number_of_occurrences):
-        self._occurrences += number_of_occurrences
+        self._occurrences = number_of_occurrences
 
     # Methods
     def increment_total_time(self, time):
         self.total_time += time
+
+    def increment_occurrences(self, number_of_occurrences):
+        self.occurrences += number_of_occurrences
+
+    def increment_total_time_variance(self, variance_time):
+        self.total_time_variance += variance_time
 
     def calculate_average(self):
         return self.total_time / self.occurrences
