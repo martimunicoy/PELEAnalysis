@@ -42,14 +42,14 @@ class TimeCalculator:
         for file in file_list:
             with open(file) as opened_file:
                 file_lines = opened_file.read().split("\n")
-                self.__find_matches_and_get_times(file_lines)
+                self.__find_matches_and_get_times(file_lines, file)
 
-    def __find_matches_and_get_times(self, file_lines):
+    def __find_matches_and_get_times(self, file_lines, file_path):
         for line in file_lines:
             for step_type_class in self._PELE_step_types_list:
                 if step_type_class.name_to_search_in_log_file in line:
                     time_found = self.__find_time_in_line(line, step_type_class)
-                    self.__compare_upper_lower_times(step_type_class, time_found)
+                    self.__compare_upper_lower_times(step_type_class, time_found, file_path)
                     self.__increment_variables(time_found, step_type_class)
 
     def __find_time_in_line(self, line, step_type_class):
@@ -57,11 +57,14 @@ class TimeCalculator:
         time_found = float(times[step_type_class.time_position_in_log_file])
         return time_found
 
-    def __compare_upper_lower_times(self, step_type_class: TimeStructure, time_found):
+    def __compare_upper_lower_times(self, step_type_class: TimeStructure, time_found, file_path):
         if time_found > step_type_class.highest_time:
             step_type_class.highest_time = time_found
+            step_type_class.highest_time_file_path = file_path
+
         if time_found < step_type_class.lowest_time:
             step_type_class.lowest_time = time_found
+            step_type_class.lowest_time_file_path = file_path
 
     def __increment_variables(self, time_found, step_type_class):
         step_type_class.increment_occurrences(1)

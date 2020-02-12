@@ -12,7 +12,9 @@ class TimeStructure:
         self._total_time = 0
         self._occurrences = 0
         self._lowest_time = sys.float_info.max
+        self._lowest_time_file_path = ""
         self._highest_time = sys.float_info.min
+        self._highest_time_file_path = ""
 
     def print_report(self):
         print(self)
@@ -21,7 +23,9 @@ class TimeStructure:
         return "PELE " + self.name + " time: \n" + \
                "---Average time: " + str(self.calculate_average()) + "\n" + \
                "---Highest time: " + str(self.highest_time) + "\n" + \
-               "---Lowest time: " + str(self.lowest_time) + "\n"
+               "---Highest time file path: " + self.highest_time_file_path + "\n" + \
+               "---Lowest time: " + str(self.lowest_time) + "\n" + \
+               "---Lowest time file path: " + self.lowest_time_file_path + "\n"
 
     # Properties
     @property
@@ -40,6 +44,14 @@ class TimeStructure:
     def highest_time(self):
         return self._highest_time
 
+    @property
+    def lowest_time_file_path(self):
+        return self._lowest_time_file_path
+
+    @property
+    def highest_time_file_path(self):
+        return self._highest_time_file_path
+
     # Setters
     @total_time.setter
     def total_time(self, time):
@@ -56,6 +68,14 @@ class TimeStructure:
     @highest_time.setter
     def highest_time(self, time):
         self._highest_time = time
+
+    @lowest_time_file_path.setter
+    def lowest_time_file_path(self, path):
+        self._lowest_time_file_path = path
+
+    @highest_time_file_path.setter
+    def highest_time_file_path(self, path):
+        self._highest_time_file_path = path
 
     # Methods
     def increment_total_time(self, time):
