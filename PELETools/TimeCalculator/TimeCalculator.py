@@ -49,6 +49,7 @@ class TimeCalculator:
             for step_type_class in self._PELE_step_types_list:
                 if step_type_class.name_to_search_in_log_file in line:
                     time_found = self.__find_time_in_line(line, step_type_class)
+                    self.__compare_upper_lower_times(step_type_class, time_found)
                     self.__increment_variables(time_found, step_type_class)
 
     def __find_time_in_line(self, line, step_type_class):
@@ -56,10 +57,15 @@ class TimeCalculator:
         time_found = float(times[step_type_class.time_position_in_log_file])
         return time_found
 
+    def __compare_upper_lower_times(self, step_type_class: TimeStructure, time_found):
+        if time_found > step_type_class.highest_time:
+            step_type_class.highest_time = time_found
+        if time_found < step_type_class.lowest_time:
+            step_type_class.lowest_time = time_found
+
     def __increment_variables(self, time_found, step_type_class):
         step_type_class.increment_occurrences(1)
         step_type_class.increment_total_time(time_found)
-        step_type_class.increment_total_time_variance(time_found ** 2)
 
     def __instantiate_PELE_step_types(self):
         for step_type in PELE_STEP_TYPES:
