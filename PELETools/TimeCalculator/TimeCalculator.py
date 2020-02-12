@@ -1,139 +1,69 @@
+# Repo imports
+from PELETools.TimeCalculator.PELEStepTypes import *
+
+# Python imports
 import glob
 import re
-import math
+from typing import List
 
 
 class TimeCalculator:
 
-    def __init__(self, output_simulation_path):
+    def __init__(self, output_simulation_path, all_types):
         self._output_simulation_path = output_simulation_path
+        self._PELE_step_types_list: List[TimeStructure] = []
+
+        self.__instantiate_objects(all_types)
 
     @property
     def output_simulation_path(self):
         return self._output_simulation_path
 
-    def calculate_step_time(self):
-        occurrences, file_time, variance_file_time = self.__calculate_times_for_step()
-        avg_file_time, final_variance_file_time = self.__perform_operations(file_time, occurrences,
-                                                                            variance_file_time)
-        self.__print_results("step", avg_file_time, final_variance_file_time)
+    def calculate_times(self):
+        self.__read_file_and_find_times()
 
-    def calculate_perturbation_time(self):
-        occurrences, file_time, variance_file_time = self.__calculate_times_for_perturbation()
-        avg_file_time, final_variance_file_time = self.__perform_operations(file_time, occurrences,
-                                                                            variance_file_time)
-        self.__print_results("Perturbation", avg_file_time, final_variance_file_time)
+    def print_times(self):
+        for step_type_class in self._PELE_step_types_list:
+            print(step_type_class)
 
-    def calculate_ANM_time(self):
-        occurrences, file_time, variance_file_time = self.__calculate_times_for_ANM()
-        avg_file_time, final_variance_file_time = self.__perform_operations(file_time, occurrences,
-                                                                            variance_file_time)
-        self.__print_results("ANM", avg_file_time, final_variance_file_time)
+    def save_results(self, path):
+        with open(path, 'w+') as file:
+            for step_type_class in self._PELE_step_types_list:
+                print(step_type_class, file=file)
 
-    def calculate_side_chain_time(self):
-        occurrences, file_time, variance_file_time = self.__calculate_times_for_side_chain()
-        avg_file_time, final_variance_file_time = self.__perform_operations(file_time, occurrences,
-                                                                            variance_file_time)
-        self.__print_results("Side Chain", avg_file_time, final_variance_file_time)
+    def __instantiate_objects(self, all_types):
+        if all_types:
+            self.__instantiate_PELE_step_types()
+        else:
+            self.__instantiate_only_PELE_step()
 
-    def calculate_minimization_time(self):
-        occurrences, file_time, variance_file_time = self.__calculate_times_for_minimization()
-        avg_file_time, final_variance_file_time = self.__perform_operations(file_time, occurrences,
-                                                                            variance_file_time)
-        self.__print_results("Minimization", avg_file_time, final_variance_file_time)
-
-    def __calculate_times_for_step(self):
-        occurrences, file_time, variance_file_time = 0, 0, 0
+    def __read_file_and_find_times(self):
         file_list = glob.glob(self._output_simulation_path)
         for file in file_list:
             with open(file) as opened_file:
                 file_lines = opened_file.read().split("\n")
-                occurrences, file_time, variance_file_time = \
-                    self.__iterate_through_step_lines(file_lines, occurrences, file_time, variance_file_time)
+                self.__find_matches_and_get_times(file_lines)
 
-        return occurrences, file_time, variance_file_time
-
-    def __calculate_times_for_perturbation(self):
-        occurrences, file_time, variance_file_time = 0, 0, 0
-        file_list = glob.glob(self._output_simulation_path)
-        for file in file_list:
-            with open(file) as opened_file:
-                file_lines = opened_file.read().split("\n")
-                occurrences, file_time, variance_file_time = \
-                    self.__iterate_through_algorithm_lines(
-                        "Perturbation Ef:", file_lines, occurrences, file_time, variance_file_time
-                    )
-
-        return occurrences, file_time, variance_file_time
-
-    def __calculate_times_for_ANM(self):
-        occurrences, file_time, variance_file_time = 0, 0, 0
-        file_list = glob.glob(self._output_simulation_path)
-        for file in file_list:
-            with open(file) as opened_file:
-                file_lines = opened_file.read().split("\n")
-                occurrences, file_time, variance_file_time = \
-                    self.__iterate_through_algorithm_lines(
-                        "ANM Ef:", file_lines, occurrences, file_time, variance_file_time
-                    )
-
-        return occurrences, file_time, variance_file_time
-
-    def __calculate_times_for_side_chain(self):
-        occurrences, file_time, variance_file_time = 0, 0, 0
-        file_list = glob.glob(self._output_simulation_path)
-        for file in file_list:
-            with open(file) as opened_file:
-                file_lines = opened_file.read().split("\n")
-                occurrences, file_time, variance_file_time = \
-                    self.__iterate_through_algorithm_lines(
-                        "Side Chain Prediction Ef:", file_lines, occurrences, file_time, variance_file_time
-                    )
-
-        return occurrences, file_time, variance_file_time
-
-    def __calculate_times_for_minimization(self):
-        occurrences, file_time, variance_file_time = 0, 0, 0
-        file_list = glob.glob(self._output_simulation_path)
-        for file in file_list:
-            with open(file) as opened_file:
-                file_lines = opened_file.read().split("\n")
-                occurrences, file_time, variance_file_time = \
-                    self.__iterate_through_algorithm_lines(
-                        "Minimization Ef:", file_lines, occurrences, file_time, variance_file_time
-                    )
-
-        return occurrences, file_time, variance_file_time
-
-    def __iterate_through_step_lines(self, file_lines, occurrences, file_time, variance_file_time):
+    def __find_matches_and_get_times(self, file_lines):
         for line in file_lines:
-            if "step time" in line:
-                occurrences += 1
-                numbers = re.findall(r"[-+]?\d*\.\d+|\d+", line)
-                file_time += float(numbers[0])
-                variance_file_time += float(numbers[0]) ** 2
+            for step_type_class in self._PELE_step_types_list:
+                if step_type_class.name_to_search_in_log_file in line:
+                    time_found = self.__find_time_in_line(line, step_type_class)
+                    self.__increment_variables(time_found, step_type_class)
 
-        return occurrences, file_time, variance_file_time
+    def __find_time_in_line(self, line, step_type_class):
+        times = re.findall(r"[-+]?\d*\.\d+|\d+", line)
+        time_found = float(times[step_type_class.time_position_in_log_file])
+        return time_found
 
-    def __perform_operations(self, file_time, occurrences, variance_file_time):
+    def __increment_variables(self, time_found, step_type_class):
+        step_type_class.increment_occurrences(1)
+        step_type_class.increment_total_time(time_found)
+        step_type_class.increment_total_time_variance(time_found ** 2)
 
-        average_file_time = file_time / occurrences
-        final_variance_file_time = variance_file_time / occurrences
+    def __instantiate_PELE_step_types(self):
+        for step_type in PELE_STEP_TYPES:
+            self._PELE_step_types_list.append(step_type())
 
-        return average_file_time, final_variance_file_time
-
-    def __iterate_through_algorithm_lines(self, algorithm_type, file_lines, occurrences, file_time, variance_file_time):
-        for line in file_lines:
-            if algorithm_type in line:
-                occurrences += 1
-                numbers = re.findall(r"[-+]?\d*\.\d+|\d+", line)
-                file_time += float(numbers[-1])
-                variance_file_time += float(numbers[-1]) ** 2
-
-        return occurrences, file_time, variance_file_time
-
-    def __print_results(self, result_type, average_file_time, final_variance_file_time):
-        print("Results of " + result_type + " calculation...")
-        print("---Average time: " + str(average_file_time))
-        print("---Variance time: " + str(final_variance_file_time))
-        print("---Standard Deviation: " + str(math.sqrt(final_variance_file_time)) + "\n")
+    def __instantiate_only_PELE_step(self):
+        self._PELE_step_types_list.append(Step())
