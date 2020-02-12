@@ -8,6 +8,9 @@ class TimeStructure:
         self._total_time_variance = 0
         self._occurrences = 0
 
+    def print_report(self):
+        print(self)
+
     # Properties
     @property
     def total_time(self):
