@@ -17,6 +17,12 @@ class TimeStructure:
     def print_report(self):
         print(self)
 
+    def __str__(self):
+        return "PELE " + self.name + " time: \n" + \
+               "---Average time: " + str(self.calculate_average()) + "\n" + \
+               "---Highest time: " + str(self.highest_time) + "\n" + \
+               "---Lowest time: " + str(self.lowest_time) + "\n"
+
     # Properties
     @property
     def total_time(self):
