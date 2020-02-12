@@ -1,4 +1,5 @@
-import math
+# Python imports
+import sys
 
 
 class TimeStructure:
@@ -9,8 +10,9 @@ class TimeStructure:
 
     def __init__(self):
         self._total_time = 0
-        self._total_time_variance = 0
         self._occurrences = 0
+        self._lowest_time = sys.float_info.max
+        self._highest_time = sys.float_info.min
 
     def print_report(self):
         print(self)
@@ -21,25 +23,33 @@ class TimeStructure:
         return self._total_time
 
     @property
-    def total_time_variance(self):
-        return self._total_time_variance
-
-    @property
     def occurrences(self):
         return self._occurrences
+
+    @property
+    def lowest_time(self):
+        return self._lowest_time
+
+    @property
+    def highest_time(self):
+        return self._highest_time
 
     # Setters
     @total_time.setter
     def total_time(self, time):
         self._total_time = time
 
-    @total_time_variance.setter
-    def total_time_variance(self, variance_time):
-        self._total_time_variance = variance_time
-
     @occurrences.setter
     def occurrences(self, number_of_occurrences):
         self._occurrences = number_of_occurrences
+
+    @lowest_time.setter
+    def lowest_time(self, time):
+        self._lowest_time = time
+
+    @highest_time.setter
+    def highest_time(self, time):
+        self._highest_time = time
 
     # Methods
     def increment_total_time(self, time):
@@ -47,9 +57,6 @@ class TimeStructure:
 
     def increment_occurrences(self, number_of_occurrences):
         self.occurrences += number_of_occurrences
-
-    def increment_total_time_variance(self, variance_time):
-        self.total_time_variance += variance_time
 
     def calculate_average(self):
         return self.total_time / self.occurrences
