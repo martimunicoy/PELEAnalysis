@@ -8,7 +8,7 @@ def parse_arguments():
     __set_optional_arguments(parser)
     args = parser.parse_args()
 
-    return args.output_path, args.all_times
+    return args.simulation_path, args.all_times, args.output_save
 
 
 def __str2bool(v):
@@ -24,9 +24,9 @@ def __str2bool(v):
 
 def __set_required_arguments(argument_parser: ap.ArgumentParser) -> ap.ArgumentParser:
     required_arguments = argument_parser.add_argument_group("Required arguments")
-    required_arguments.add_argument("-p", "--output_path", required=True,
-                                    metavar="Output Simulation Path", type=str,
-                                    help="Output folder of a PELE simulation")
+    required_arguments.add_argument("-s", "--simulation_path", required=True,
+                                    metavar="Simulation Path", type=str,
+                                    help="Folder of a PELE simulation")
 
     return argument_parser
 
@@ -34,8 +34,12 @@ def __set_required_arguments(argument_parser: ap.ArgumentParser) -> ap.ArgumentP
 def __set_optional_arguments(argument_parser: ap.ArgumentParser) -> ap.ArgumentParser:
     optional_arguments = argument_parser.add_argument_group("Optional arguments")
     optional_arguments.add_argument("-a", "--all_times", required=False, nargs='?',
-                                    metavar="Enable calculation of times of a PELE Simulation",
+                                    metavar="Enable calculation of all times of a PELE Simulation",
                                     type=__str2bool, const=True, default=False,
-                                    help="Activates calculation of all PELE parts")
+                                    help="Activates calculation of all PELE parts.")
+
+    optional_arguments.add_argument("-o", "--output_save", required=False, nargs='?',
+                                    metavar="Path to save the results of the time calculation", type=str, default="",
+                                    help="Path to save the results of the time calculation")
 
     return argument_parser
