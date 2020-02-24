@@ -37,4 +37,6 @@ class Minimization(TimeStructure):
     time_position_in_log_file = -1  # Last position
 
 
-PELE_STEP_TYPES = [Step, Perturbation, ANM, SideChain, Minimization]
+PELE_STEP_TYPES_DICT = {"Step": Step, "Perturbation": Perturbation,
+                        "ANM": ANM, "SideChain": SideChain,
+                        "Minimization": Minimization}

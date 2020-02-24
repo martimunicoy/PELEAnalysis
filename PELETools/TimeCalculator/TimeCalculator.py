@@ -4,26 +4,30 @@ from PELETools.TimeCalculator.PELEStepTypes import *
 # Python imports
 import glob
 import re
-from typing import List
+from typing import Dict
 
 
 class TimeCalculator:
 
-    def __init__(self, output_simulation_path, all_types):
-        self._output_simulation_path = output_simulation_path
-        self._PELE_step_types_list: List[TimeStructure] = []
+    def __init__(self, simulation_path, all_types):
+        self._simulation_path = simulation_path
+        self._PELE_TimeStructures_dict: Dict[str, TimeStructure] = {}
 
         self.__instantiate_objects(all_types)
 
     @property
-    def output_simulation_path(self):
-        return self._output_simulation_path
+    def PELE_TimeStructures_dict(self):
+        return self._PELE_TimeStructures_dict
+
+    @PELE_TimeStructures_dict.setter
+    def PELE_TimeStructures_dict(self, step_dict):
+        self._PELE_TimeStructures_dict = step_dict
 
     def calculate_times(self):
         self.__read_file_and_find_times()
 
     def print_times(self):
-        for step_type_class in self._PELE_step_types_list:
+        for step_type_class in self._PELE_TimeStructures_dict.values():
             print(step_type_class)
 
     def save_results(self, path):
@@ -38,7 +42,7 @@ class TimeCalculator:
             self.__instantiate_only_PELE_step()
 
     def __read_file_and_find_times(self):
-        file_list = glob.glob(self._output_simulation_path)
+        for file in self._simulation_path:
         for file in file_list:
             with open(file) as opened_file:
                 file_lines = opened_file.read().split("\n")
@@ -46,7 +50,7 @@ class TimeCalculator:
 
     def __find_matches_and_get_times(self, file_lines, file_path):
         for line in file_lines:
-            for step_type_class in self._PELE_step_types_list:
+            for step_type_class in self._PELE_TimeStructures_dict.values():
                 if step_type_class.name_to_search_in_log_file in line:
                     time_found = self.__find_time_in_line(line, step_type_class)
                     self.__compare_upper_lower_times(step_type_class, time_found, file_path)
@@ -71,8 +75,8 @@ class TimeCalculator:
         step_type_class.increment_total_time(time_found)
 
     def __instantiate_PELE_step_types(self):
-        for step_type in PELE_STEP_TYPES:
-            self._PELE_step_types_list.append(step_type())
+        for step_name, step_type in PELE_STEP_TYPES_DICT.items():
+            self._PELE_TimeStructures_dict[step_name] = step_type()
 
     def __instantiate_only_PELE_step(self):
-        self._PELE_step_types_list.append(Step())
+        self._PELE_TimeStructures_dict["Step"] = Step()
