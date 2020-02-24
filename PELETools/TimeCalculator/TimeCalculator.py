@@ -2,7 +2,6 @@
 from PELETools.TimeCalculator.PELEStepTypes import *
 
 # Python imports
-import glob
 import re
 from typing import Dict
 
@@ -30,11 +29,6 @@ class TimeCalculator:
         for step_type_class in self._PELE_TimeStructures_dict.values():
             print(step_type_class)
 
-    def save_results(self, path):
-        with open(path, 'w+') as file:
-            for step_type_class in self._PELE_step_types_list:
-                print(step_type_class, file=file)
-
     def __instantiate_objects(self, all_types):
         if all_types:
             self.__instantiate_PELE_step_types()
@@ -43,7 +37,6 @@ class TimeCalculator:
 
     def __read_file_and_find_times(self):
         for file in self._simulation_path:
-        for file in file_list:
             with open(file) as opened_file:
                 file_lines = opened_file.read().split("\n")
                 self.__find_matches_and_get_times(file_lines, file)
