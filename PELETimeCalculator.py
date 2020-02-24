@@ -1,19 +1,18 @@
 # Repo Imports
-from PELETools.TimeCalculator.TimeCalculatorArgParser import *
-from PELETools.TimeCalculator.TimeCalculator import *
+import PELETools.TimeCalculator.TimeCalculatorArgParser as argParser
+import PELETools.TimeCalculator.ParallelTimeCalculator as parallelCalculator
 
 
 def main():
     # Parse args
-    simulation_path, all_times, save_path = parse_arguments()
+    simulation_path, all_times, jobs, save_path = argParser.parse_arguments()
 
-    # Call functions
-    time_calculator = TimeCalculator(simulation_path, all_times)
-    time_calculator.calculate_times()
-    time_calculator.print_times()
+    result = parallelCalculator.calculate_times(simulation_path, all_times, jobs)
+
     if save_path != "":
-        time_calculator.save_results(save_path)
+        parallelCalculator.save_results(result, save_path)
 
 
 if __name__ == "__main__":
     main()
+
