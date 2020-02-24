@@ -26,7 +26,7 @@ def __set_required_arguments(argument_parser: ap.ArgumentParser) -> ap.ArgumentP
     required_arguments = argument_parser.add_argument_group("Required arguments")
     required_arguments.add_argument("-s", "--simulation_path", required=True, nargs='?',
                                     metavar="Simulation Path", type=str,
-                                    help="Folder of a PELE simulation")
+                                    help="Path to all log files.")
 
     return argument_parser
 
