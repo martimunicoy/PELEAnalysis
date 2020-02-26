@@ -16,9 +16,6 @@ class TimeStructure:
         self._highest_time = sys.float_info.min
         self._highest_time_file_path = ""
 
-    def print_report(self):
-        print(self)
-
     def __str__(self):
         return "PELE " + self.name + " time: \n" + \
                "---Average time: " + str(self.calculate_average()) + "\n" + \
