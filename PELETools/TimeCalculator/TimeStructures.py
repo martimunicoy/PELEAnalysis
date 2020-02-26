@@ -75,10 +75,10 @@ class TimeStructure:
         self._highest_time_file_path = path
 
     # Methods
-    def increment_total_time(self, time):
+    def increment_total_time(self, time: float):
         self.total_time += time
 
-    def increment_occurrences(self, number_of_occurrences):
+    def increment_occurrences(self, number_of_occurrences: int):
         self.occurrences += number_of_occurrences
 
     def calculate_average(self):
