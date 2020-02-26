@@ -5,4 +5,5 @@ PELEAnalysis.egg-info
 cover/
 tests/
 .coverage
-
+.idea/
+.venv
