@@ -51,7 +51,7 @@ class TestTimeStructure:
         self.test_time_structure.increment_occurrences(3)
         assert_equal(self.test_time_structure.occurrences, 5)
 
-    def calculate_average(self):
+    def test_calculate_average(self):
         self.test_time_structure.total_time = 30
         self.test_time_structure.occurrences = 2
         result = self.test_time_structure.calculate_average()
