@@ -1,0 +1,35 @@
+PELE Step time: 
+---Average time: 107.20483333333334
+---Highest time: 146.979
+---Highest time file path: PELETools/TimeCalculator/tests/data/logFile_1.txt
+---Lowest time: 72.389
+---Lowest time file path: PELETools/TimeCalculator/tests/data/logFile_3.txt
+
+PELE Perturbation time: 
+---Average time: 43.791333333333334
+---Highest time: 50.7186
+---Highest time file path: PELETools/TimeCalculator/tests/data/logFile_1.txt
+---Lowest time: 31.8809
+---Lowest time file path: PELETools/TimeCalculator/tests/data/logFile_3.txt
+
+PELE ANM time: 
+---Average time: 18.71516666666667
+---Highest time: 21.7559
+---Highest time file path: PELETools/TimeCalculator/tests/data/logFile_1.txt
+---Lowest time: 16.8607
+---Lowest time file path: PELETools/TimeCalculator/tests/data/logFile_3.txt
+
+PELE SideChain time: 
+---Average time: 37.46646666666667
+---Highest time: 53.6631
+---Highest time file path: PELETools/TimeCalculator/tests/data/logFile_1.txt
+---Lowest time: 26.2207
+---Lowest time file path: PELETools/TimeCalculator/tests/data/logFile_2.txt
+
+PELE Minimization time: 
+---Average time: 26.804216666666665
+---Highest time: 32.5825
+---Highest time file path: PELETools/TimeCalculator/tests/data/logFile_2.txt
+---Lowest time: 21.015
+---Lowest time file path: PELETools/TimeCalculator/tests/data/logFile_1.txt
+
