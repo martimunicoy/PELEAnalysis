@@ -17,8 +17,11 @@ class TimeStructure:
         self._highest_time_file_path = ""
 
     def __str__(self):
+        average = 0
+        if self.occurrences != 0:
+            average = self.calculate_average()
         return "PELE " + self.name + " time: \n" + \
-               "---Average time: " + str(self.calculate_average()) + "\n" + \
+               "---Average time: " + str(average) + "\n" + \
                "---Highest time: " + str(self.highest_time) + "\n" + \
                "---Highest time file path: " + self.highest_time_file_path + "\n" + \
                "---Lowest time: " + str(self.lowest_time) + "\n" + \
