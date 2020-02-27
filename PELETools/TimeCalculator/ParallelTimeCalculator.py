@@ -1,13 +1,12 @@
 # Python imports
 from multiprocessing import Process, Queue
-from typing import Dict
+import glob
 
 # Repo imports
-from PELETools.TimeCalculator.TimeCalculator import TimeCalculator
-from PELETools.TimeCalculator.TimeStructures import TimeStructure
+from PELETools.TimeCalculator.TimeCalculator import *
 
 
-def calculate_times(simulation_path, all_times: bool, num_jobs: int) -> Dict[str, TimeStructure]:
+def calculate_times(simulation_path, all_times, num_jobs) -> Dict[str, TimeStructure]:
     queue: Queue[TimeCalculator] = Queue()
     jobs = []
     simulation_files = _prepare_data(simulation_path, num_jobs)
@@ -81,5 +80,6 @@ def _add_time_and_occurrences(time_structure_object, best_result):
     best_result.occurrences += time_structure_object.occurrences
 
 
-def _prepare_data(file_list, jobs):
+def _prepare_data(simulation_path, jobs):
+    file_list = glob.glob(simulation_path)
     return [file_list[i::jobs] for i in range(jobs)]
