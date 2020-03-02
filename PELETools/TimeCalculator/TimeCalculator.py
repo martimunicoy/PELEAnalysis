@@ -22,16 +22,8 @@ class TimeCalculator:
     def PELE_TimeStructures_dict(self):
         return self._PELE_TimeStructures_dict
 
-    @PELE_TimeStructures_dict.setter
-    def PELE_TimeStructures_dict(self, step_dict):
-        self._PELE_TimeStructures_dict = step_dict
-
     def calculate_times(self):
         self._read_file_and_find_times()
-
-    def print_times(self):
-        for step_type_class in self._PELE_TimeStructures_dict.values():
-            print(step_type_class)
 
     def _instantiate_objects(self, all_types):
         if all_types:
