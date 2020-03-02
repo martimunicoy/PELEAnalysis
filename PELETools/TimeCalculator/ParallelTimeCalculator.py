@@ -1,6 +1,7 @@
 # Python imports
 from multiprocessing import Process, Queue
 from typing import Dict
+import glob
 
 # Repo imports
 from PELETools.TimeCalculator.TimeCalculator import TimeCalculator
@@ -82,4 +83,5 @@ def _add_time_and_occurrences(time_structure_object, best_result):
 
 
 def _prepare_data(file_list, jobs):
+    file_list = glob.glob(file_list)
     return [file_list[i::jobs] for i in range(jobs)]
