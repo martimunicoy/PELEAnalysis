@@ -16,12 +16,12 @@ class TimeStructure:
         self._highest_time = sys.float_info.min
         self._highest_time_file_path = ""
 
-    def print_report(self):
-        print(self)
-
     def __str__(self):
+        average = 0
+        if self.occurrences != 0:
+            average = self.calculate_average()
         return "PELE " + self.name + " time: \n" + \
-               "---Average time: " + str(self.calculate_average()) + "\n" + \
+               "---Average time: " + str(average) + "\n" + \
                "---Highest time: " + str(self.highest_time) + "\n" + \
                "---Highest time file path: " + self.highest_time_file_path + "\n" + \
                "---Lowest time: " + str(self.lowest_time) + "\n" + \
@@ -78,10 +78,10 @@ class TimeStructure:
         self._highest_time_file_path = path
 
     # Methods
-    def increment_total_time(self, time):
+    def increment_total_time(self, time: float):
         self.total_time += time
 
-    def increment_occurrences(self, number_of_occurrences):
+    def increment_occurrences(self, number_of_occurrences: int):
         self.occurrences += number_of_occurrences
 
     def calculate_average(self):

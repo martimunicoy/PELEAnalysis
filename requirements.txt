@@ -1,1 +1,3 @@
+nose
+coverage
 mdtraj>=1.9.3
