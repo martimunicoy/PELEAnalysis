@@ -7,9 +7,7 @@ from nose.tools import assert_equal, assert_almost_equal, assert_multi_line_equa
 # Python imports
 import os
 
-TEST_FILES = ["PELETools/TimeCalculator/tests/data/logFile_1.txt",
-              "PELETools/TimeCalculator/tests/data/logFile_2.txt",
-              "PELETools/TimeCalculator/tests/data/logFile_3.txt"]
+TEST_FILES = "PELETools/TimeCalculator/tests/data/logFile*"
 
 
 class TestParallelTimeCalculator:

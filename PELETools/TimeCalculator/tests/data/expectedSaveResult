@@ -20,7 +20,7 @@ PELE ANM time:
 ---Lowest time file path: PELETools/TimeCalculator/tests/data/logFile_3.txt
 
 PELE SideChain time: 
----Average time: 37.46646666666667
+---Average time: 37.46646666666666
 ---Highest time: 53.6631
 ---Highest time file path: PELETools/TimeCalculator/tests/data/logFile_1.txt
 ---Lowest time: 26.2207

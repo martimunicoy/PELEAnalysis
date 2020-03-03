@@ -1,7 +1,8 @@
 # Python imports
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Manager
 from typing import Dict
 import glob
+import os
 
 # Repo imports
 from PELETools.TimeCalculator.TimeCalculator import TimeCalculator
@@ -9,7 +10,9 @@ from PELETools.TimeCalculator.TimeStructures import TimeStructure
 
 
 def calculate_times(simulation_path, all_times: bool, num_jobs: int) -> Dict[str, TimeStructure]:
-    queue: Queue[TimeCalculator] = Queue()
+    manager = Manager()
+    queue = manager.Queue()
+
     jobs = []
     simulation_files = _prepare_data(simulation_path, num_jobs)
     for i in range(num_jobs):
