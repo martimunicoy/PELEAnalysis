@@ -2,7 +2,6 @@
 from multiprocessing import Process, Manager
 from typing import Dict
 import glob
-import os
 
 # Repo imports
 from PELETools.TimeCalculator.TimeCalculator import TimeCalculator

@@ -1,5 +1,5 @@
 # Project imports
-from PELETools.TimeCalculator.PELEStepTypes import Step, Perturbation, ANM,\
+from PELETools.TimeCalculator.PELEStepTypes import Step, Perturbation, WaterPerturbation, ANM,\
     SideChain, Minimization, PELE_STEP_TYPES_DICT
 
 # Libraries imports
@@ -18,6 +18,12 @@ class TestPELEStepTypes:
         perturbation = Perturbation()
         assert_equal(perturbation.name, "Perturbation")
         assert_equal(perturbation.name_to_search_in_log_file, "Perturbation Ef:")
+        assert_equal(perturbation.time_position_in_log_file, -1)
+
+    def test_water_perturbation_init(self):
+        perturbation = WaterPerturbation()
+        assert_equal(perturbation.name, "Water Perturbation")
+        assert_equal(perturbation.name_to_search_in_log_file, "Water perturbation: Ef:")
         assert_equal(perturbation.time_position_in_log_file, -1)
 
     def test_anm_init(self):

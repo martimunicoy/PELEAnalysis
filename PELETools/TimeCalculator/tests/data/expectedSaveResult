@@ -1,35 +1,42 @@
 PELE Step time: 
----Average time: 107.20483333333334
----Highest time: 146.979
----Highest time file path: PELETools/TimeCalculator/tests/data/logFile_1.txt
----Lowest time: 72.389
----Lowest time file path: PELETools/TimeCalculator/tests/data/logFile_3.txt
+---Average time: 47.209264999999995
+---Highest time: 111.653
+---Highest time file path: tests/data/logFile_4.txt
+---Lowest time: 16.2289
+---Lowest time file path: tests/data/logFile_3.txt
 
 PELE Perturbation time: 
----Average time: 43.791333333333334
----Highest time: 50.7186
----Highest time file path: PELETools/TimeCalculator/tests/data/logFile_1.txt
----Lowest time: 31.8809
----Lowest time file path: PELETools/TimeCalculator/tests/data/logFile_3.txt
+---Average time: 4.0763705
+---Highest time: 6.95409
+---Highest time file path: tests/data/logFile_1.txt
+---Lowest time: 2.84781
+---Lowest time file path: tests/data/logFile_2.txt
+
+PELE Water Perturbation time: 
+---Average time: 3.0151575
+---Highest time: 3.6495
+---Highest time file path: tests/data/logFile_2.txt
+---Lowest time: 2.69748
+---Lowest time file path: tests/data/logFile_2.txt
 
 PELE ANM time: 
----Average time: 18.71516666666667
----Highest time: 21.7559
----Highest time file path: PELETools/TimeCalculator/tests/data/logFile_1.txt
----Lowest time: 16.8607
----Lowest time file path: PELETools/TimeCalculator/tests/data/logFile_3.txt
+---Average time: 9.579593333333333
+---Highest time: 21.134
+---Highest time file path: tests/data/logFile_1.txt
+---Lowest time: 3.84238
+---Lowest time file path: tests/data/logFile_3.txt
 
 PELE SideChain time: 
----Average time: 37.46646666666666
----Highest time: 53.6631
----Highest time file path: PELETools/TimeCalculator/tests/data/logFile_1.txt
----Lowest time: 26.2207
----Lowest time file path: PELETools/TimeCalculator/tests/data/logFile_2.txt
+---Average time: 5.227150833333334
+---Highest time: 8.20684
+---Highest time file path: tests/data/logFile_3.txt
+---Lowest time: 2.51079
+---Lowest time file path: tests/data/logFile_4.txt
 
 PELE Minimization time: 
----Average time: 26.804216666666665
----Highest time: 32.5825
----Highest time file path: PELETools/TimeCalculator/tests/data/logFile_2.txt
----Lowest time: 21.015
----Lowest time file path: PELETools/TimeCalculator/tests/data/logFile_1.txt
+---Average time: 32.19217647058824
+---Highest time: 89.3784
+---Highest time file path: tests/data/logFile_4.txt
+---Lowest time: 11.9417
+---Lowest time file path: tests/data/logFile_3.txt
 
