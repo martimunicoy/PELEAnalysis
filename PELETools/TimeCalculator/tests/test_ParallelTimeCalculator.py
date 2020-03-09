@@ -45,10 +45,15 @@ class TestParallelTimeCalculator:
     def test_save_result(self):
         result = calculate_times(TEST_FILES, True, 1)
         save_results(result, "tests/data/saveResult")
-        with open('tests/data/saveResult', 'r') as file1:
-            with open('tests/data/expectedSaveResult', 'r') as file2:
-                assert_multi_line_equal(file1.read(), file2.read())
-                os.remove("tests/data/saveResult")
+        with open('tests/data/saveResult', 'r') as file1, \
+                open('tests/data/expectedSaveResult', 'r') as file2:
+            for line1, line2 in zip(file1, file2):
+                line1 = line1.rstrip('\r\n')
+                line2 = line2.rstrip('\r\n')
+                if line1 != line2:
+                    return False
+            os.remove('tests/data/saveResult')
+            return next(file1, None) is None and next(file2, None) is None
 
     def assert_step(self, step_dict):
         assert_almost_equal(step_dict.total_time, 944.1853)
