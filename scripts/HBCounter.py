@@ -65,17 +65,17 @@ def find_hbonds_in_trajectory(lig_resname, distance, angle, pseudo,
 
 def find_ligand_hbonds(traj, lig, distance, angle, pseudo):
     hbonds_dict = {}
-    for model_id, snapshot in enumerate(traj):
-        results = find_hbond_in_snapshot(snapshot, lig, distance, angle,
+    for model_id in range(0, traj.n_frames):
+        results = find_hbond_in_snapshot(traj, model_id, lig, distance, angle,
                                          pseudo)
         hbonds_dict[model_id] = results
 
     return hbonds_dict
 
 
-def find_hbond_in_snapshot(snapshot, lig, distance, angle, pseudo):
-    hbonds = hbm.baker_hubbard(traj=snapshot, distance=distance, angle=angle,
-                               pseudo=pseudo)
+def find_hbond_in_snapshot(traj, model_id, lig, distance, angle, pseudo):
+    hbonds = hbm.baker_hubbard(traj=traj[model_id], distance=distance,
+                               angle=angle, pseudo=pseudo)
 
     results = []
     for hbond in hbonds:
@@ -83,7 +83,7 @@ def find_hbond_in_snapshot(snapshot, lig, distance, angle, pseudo):
                 all(atom in hbond for atom in lig)):
             for atom in hbond:
                 if (atom not in lig):
-                    results.append(snapshot.topology.atom(atom))
+                    results.append(traj.topology.atom(atom))
                     break
 
     return results
@@ -109,17 +109,20 @@ def main():
         PELE_output_path = PELE_sim_path.joinpath('output')
         topology_path = PELE_sim_path.joinpath(topology_path)
 
-        results = []
+        hbonds_dict = {}
 
         parallel_function = partial(find_hbonds_in_trajectory, lig_resname,
                                     distance, angle, pseudo_hb, topology_path)
 
         for epoch in PELE_output_path.glob('[0-9]*'):
             print('   - Analyzing {}'.format(epoch))
+            trajectories = epoch.glob('trajectory*xtc')
             with Pool(proc_number) as pool:
-                results += pool.map(parallel_function,
-                                    epoch.glob('trajectory*xtc'))
-                print(results)
+                results = pool.map(parallel_function,
+                                   trajectories)
+
+            for r, t in zip(results, trajectories):
+                hbonds_dict[t] = r
 
         with open(str(PELE_sim_path.joinpath('hbonds.out')), 'w') as file:
             for r in results:
