@@ -129,15 +129,16 @@ def main():
             file.write(str(PELE_sim_path) + '\n')
             for traj_name, hbonds in hbonds_dict.items():
                 for model, hbs in hbonds.items():
-                    file.write('{:^15}    {:3d}    '.format(
-                        str(traj_name), model))
+                    if (len(hbs) > 0):
+                        file.write('{:^15}    {:3d}    '.format(
+                            str(traj_name), model))
 
-                    for hb in hbs[:-1]:
-                        file.write('{},'.format(hb))
+                        for hb in hbs[:-1]:
+                            file.write('{},'.format(hb))
 
-                    file.write('{}'.format(hbs[-1]))
+                        file.write('{}'.format(hbs[-1]))
 
-                    file.write('\n')
+                        file.write('\n')
 
 
 if __name__ == "__main__":
