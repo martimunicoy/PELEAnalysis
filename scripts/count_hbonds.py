@@ -39,8 +39,8 @@ def count_residues(residue_list):
 
 
 def create_barplot(dictionary):
-    plt.bar(sorted(range(len(dictionary))), sorted(list(dictionary.values())), align='center')
-    plt.xticks(sorted(range(len(dictionary))), sorted(list(dictionary.keys())))
+    plt.bar(range(len(dictionary)), list(dictionary.values()), align='center')
+    plt.xticks(range(len(dictionary)), list(dictionary.keys()))
 
 
 def main(report_file):
@@ -49,5 +49,6 @@ def main(report_file):
     counting = count_residues(residues)
     create_barplot(counting)
     plt.show()
+
 
 main(REP_FILE)
