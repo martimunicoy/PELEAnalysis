@@ -92,7 +92,8 @@ def find_hbond_in_snapshot(snapshot, lig, distance, angle, pseudo):
 def fill_report_row(df_to_fill, traj_file, epoch, snap, hbond):
     df = pd.DataFrame({"trajectory_file": traj_file, "epoch": epoch,
                        "snapshot": snap, "hbond": hbond})
-    df = df_to_fill.append(df)
+    df = df_to_fill.append(df, ignore_index=True)
+    print(df)
     return df
 
 
@@ -100,6 +101,7 @@ def main():
     # Parse args
     cfs_path, lig_resname, distance, angle, pseudo_hb, proc_number, \
         topology_path = parse_args()
+    cfs_path = glob.glob(cfs_path)
 
     cfs_path_list = []
     if (type(cfs_path) == list):
@@ -124,7 +126,9 @@ def main():
         print('  - Detecting hydrogen bonds...')
         hbonds_dict = {}
         report = pd.DataFrame(columns=["trajectory_file", "epoch",
-                                         "snapshot", "hbond"])
+                                       "snapshot", "hbond"])
+        parallel_function = partial(find_hbonds_in_trajectory,
+                                    lig_resname, distance, angle, pseudo_hb)
         for epoch in sim:
             p = Pool(proc_number)
             multi = []
@@ -154,11 +158,12 @@ def main():
 
                     file.write('\n')
 
-        for key, hbonds in items.hbonds_dict:
+        for key, hbonds in hbonds_dict.items():
             epoch, traj = key
-            for model, hbond in items.hbonds:
-                fill_report_row(report, traj_file=traj, epoch=epoch,
-                                snap=model, hbond=hbond)
+            print(epoch, traj)
+            for model, hbond in hbonds.items():
+                report = fill_report_row(report, traj_file=traj, epoch=epoch,
+                                         snap=model, hbond=hbond)
         print(report)
 
 
