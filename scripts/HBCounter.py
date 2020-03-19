@@ -44,7 +44,7 @@ def find_ligand_hbonds(traj, lig):
     hbonds_dict = {}
     for model_id, snapshot in enumerate(traj):
         results = find_hbond_in_snapshot(snapshot, lig)
-        print([(traj.topology.atom(i[0]), traj.topology.atom(i[1]), traj.topology.atom(i[2])) for i in results])
+        #print([(traj.topology.atom(i[0]), traj.topology.atom(i[1]), traj.topology.atom(i[2])) for i in results])
         hbonds_dict[model_id] = results
 
     return hbonds_dict
@@ -66,14 +66,16 @@ def find_hbond_in_snapshot(snapshot, lig):
 def fill_report_row(df_to_fill, traj_file, epoch, snap, hbond):
     df = pd.DataFrame({"trajectory_file": traj_file, "epoch": epoch,
                        "snapshot": snap, "hbond": hbond})
-    df_to_fill.append(df)
+    df = df_to_fill.append(df, ignore_index=True)
+    print(df)
+    return df
 
 
 def main():
     # Parse args
     #args = parse_args()
     cfs_path = glob.glob(
-        '/home/carles/test/adaptive.conf')
+        '6LU7_MOL0001/adaptive.conf')
     print(cfs_path)
 
     for cf_path in cfs_path:
@@ -92,7 +94,7 @@ def main():
         print('  - Detecting hydrogen bonds...')
         hbonds_dict = {}
         report = pd.DataFrame(columns=["trajectory_file", "epoch",
-                                         "snapshot", "hbond"])
+                                       "snapshot", "hbond"])
         for epoch in sim:
             print('    - Epoch {}'.format(epoch.index))
             with Pool(NUMBER_OF_PROCESSORS) as pool:
@@ -102,11 +104,12 @@ def main():
             for i, traj in enumerate([report.trajectory for report in epoch]):
                 hbonds_dict[(epoch, traj.name)] = results[i]
 
-        for key, hbonds in items.hbonds_dict:
+        for key, hbonds in hbonds_dict.items():
             epoch, traj = key
-            for model, hbond in items.hbonds:
-                fill_report_row(report, traj_file=traj, epoch=epoch,
-                                snap=model, hbond=hbond)
+            print(epoch, traj)
+            for model, hbond in hbonds.items():
+                report = fill_report_row(report, traj_file=traj, epoch=epoch,
+                                         snap=model, hbond=hbond)
         print(report)
 
 
