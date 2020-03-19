@@ -85,46 +85,6 @@ def find_hbond_in_snapshot(snapshot, lig, distance, angle, pseudo):
     return results
 
 
-def parallel_loop(lig_resname, distance, angle, pseudo_hb,
-                  proc_number, topology_path, cf_path):
-    # Avoid doing extra work
-    cf_path = Path(cf_path)
-    print('- Found control file: {}'.format(cf_path))
-    if (cf_path.parent.joinpath('hbonds.out').is_file()):
-        print('  - Skipping because \'hbonds.out\' already exists')
-        return
-
-    print('  - Parsing trajectories...')
-    builder = cfp.ControlFileBuilder(cf_path)
-    cf = builder.build()
-    sim = cf.getSimulation()
-    sim.set_topology_path(
-        cf_path.parent.joinpath(topology_path))
-    sim.getOutputFiles()
-
-    print('  - Detecting hydrogen bonds...')
-    hbonds_dict = {}
-    for epoch in sim:
-        for report in epoch:
-            hbonds_dict[(epoch, report.trajectory.name)] = \
-                find_hbonds_in_trajectory(lig_resname, distance, angle,
-                                          pseudo_hb, report.trajectory.data)
-
-    with open(cf_path.parent.joinpath('hbonds.out'), 'w') as file:
-        file.write(str(cf_path.parent.parent) + '\n')
-        for (epoch, traj_name), hbonds in hbonds_dict.items():
-            for model, hbs in hbonds.items():
-                file.write('{}    {:^15}    {:3d}    '.format(
-                    epoch.index, traj_name, model))
-
-                for hb in hbs[:-1]:
-                    file.write('{},'.format(hb))
-
-                file.write('{}'.format(hbs[-1]))
-
-                file.write('\n')
-
-
 def main():
     # Parse args
     cfs_path, lig_resname, distance, angle, pseudo_hb, proc_number, \
@@ -135,11 +95,51 @@ def main():
         for cf_path in cfs_path:
             cfs_path_list += glob.glob(cf_path)
 
-    _parallel_loop = partial(parallel_loop, lig_resname, distance, angle,
-                             pseudo_hb, proc_number, topology_path)
+    for cf_path in cfs_path_list:
+        # Avoid doing extra work
+        cf_path = Path(cf_path)
+        print('- Found control file: {}'.format(cf_path))
+        if (cf_path.parent.joinpath('hbonds.out').is_file()):
+            print('  - Skipping because \'hbonds.out\' already exists')
+            return
 
-    with Pool(proc_number) as pool:
-        pool.map(_parallel_loop, cfs_path_list)
+        print('  - Parsing trajectories...')
+        builder = cfp.ControlFileBuilder(cf_path)
+        cf = builder.build()
+        sim = cf.getSimulation()
+        sim.set_topology_path(cf_path.parent.joinpath(topology_path))
+        sim.getOutputFiles()
+
+        print('  - Detecting hydrogen bonds...')
+        hbonds_dict = {}
+        for epoch in sim:
+            p = Pool(proc_number)
+            multi = []
+            for report in epoch:
+                multi.append(p.apply_async(
+                    find_hbonds_in_trajectory,
+                    [lig_resname, distance, angle,
+                     pseudo_hb, report.trajectory.data]))
+
+            for report, process in zip(epoch, multi):
+                hbonds_dict[(epoch, report.trajectory.name)] = process.get()
+
+            p.close()
+            p.join()
+
+        with open(cf_path.parent.joinpath('hbonds.out'), 'w') as file:
+            file.write(str(cf_path.parent.parent) + '\n')
+            for (epoch, traj_name), hbonds in hbonds_dict.items():
+                for model, hbs in hbonds.items():
+                    file.write('{}    {:^15}    {:3d}    '.format(
+                        epoch.index, traj_name, model))
+
+                    for hb in hbs[:-1]:
+                        file.write('{},'.format(hb))
+
+                    file.write('{}'.format(hbs[-1]))
+
+                    file.write('\n')
 
 
 if __name__ == "__main__":

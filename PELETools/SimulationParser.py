@@ -615,7 +615,8 @@ class XTCTrajectory(Trajectory):
             raise TypeError("XTCTrajectory Error: Topology file is required" +
                             "when attempting to load an XTC trajectory")
         self._path_to_topology = Path(path_to_topology)
-        self._data = md.load_xtc(str(path), top=str(path_to_topology))
+        #self._data = md.load_xtc(str(path), top=str(path_to_topology))
+        self._data = None
 
     @property
     def path_to_topology(self):
@@ -623,7 +624,13 @@ class XTCTrajectory(Trajectory):
 
     @property
     def data(self):
+        if (self._data is None):
+            self._data = md.load_xtc(str(self.path),
+                                     top=str(self.path_to_topology))
         return self._data
+
+    def clear_data(self):
+        self._data = None
 
 
 class Logfile:
