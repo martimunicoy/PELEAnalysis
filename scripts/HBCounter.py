@@ -101,13 +101,20 @@ def main():
     else:
         PELE_sim_paths_list = glob.glob(PELE_sim_paths)
 
-    print(PELE_sim_paths_list)
+    print(' - The following PELE simulation paths will be analyzed:')
+    for PELE_sim_path in PELE_sim_paths_list:
+        print('   - {}'.format(PELE_sim_path))
 
     for PELE_sim_path in PELE_sim_paths_list:
         print(' - Analyzing {}'.format(PELE_sim_path))
         PELE_sim_path = Path(PELE_sim_path)
         PELE_output_path = PELE_sim_path.joinpath('output')
         topology_path = PELE_sim_path.joinpath(topology_relative_path)
+
+        if (not topology_path.is_file()):
+            print(' - Skipping simulation because topology file with ' +
+                  'connectivity was missing')
+            continue
 
         hbonds_dict = {}
 
@@ -116,22 +123,27 @@ def main():
 
         for epoch in PELE_output_path.glob('[0-9]*'):
             print('   - Analyzing {}'.format(epoch))
-            trajectories = [str(traj) for traj in epoch.glob('trajectory*xtc')]
+            trajectories = [traj for traj in epoch.glob('trajectory*xtc')]
             with Pool(proc_number) as pool:
                 results = pool.map(parallel_function,
                                    trajectories)
-                print(results)
+                counter = 0
+                for r in results:
+                    counter += len(r.values())
+                print('     - {} H bonds were found'.format(counter))
 
             for r, t in zip(results, trajectories):
-                hbonds_dict[t] = r
+                hbonds_dict[int(t.parent.name),
+                            int(''.join(filter(str.isdigit, t.name)))] = r
 
         with open(str(PELE_sim_path.joinpath('hbonds.out')), 'w') as file:
-            file.write(str(PELE_sim_path) + '\n')
-            for traj_name, hbonds in hbonds_dict.items():
+            file.write(str(PELE_sim_path.name) + '\n')
+            file.write('Epoch    Trajectory    Model    Hbonds' + '\n')
+            for (epoch, traj_num), hbonds in hbonds_dict.items():
                 for model, hbs in hbonds.items():
                     if (len(hbs) > 0):
-                        file.write('{:^15}    {:3d}    '.format(
-                            str(traj_name), model))
+                        file.write('{:5d}    {:10d}    {:5d}    '.format(
+                            epoch, traj_num, model))
 
                         for hb in hbs[:-1]:
                             file.write('{},'.format(hb))
