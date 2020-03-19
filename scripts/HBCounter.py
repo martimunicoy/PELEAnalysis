@@ -125,11 +125,6 @@ def main():
                 hbonds_dict[t] = r
 
         with open(str(PELE_sim_path.joinpath('hbonds.out')), 'w') as file:
-            for r in results:
-                file.write(r + '\n')
-
-        """
-        with open(str(PELE_sim_path.joinpath('hbonds.out')), 'w') as file:
             file.write(str(PELE_sim_path) + '\n')
             for traj_name, hbonds in hbonds_dict.items():
                 for model, hbs in hbonds.items():
@@ -142,7 +137,6 @@ def main():
                     file.write('{}'.format(hbs[-1]))
 
                     file.write('\n')
-        """
 
 
 if __name__ == "__main__":
