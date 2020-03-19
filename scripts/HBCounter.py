@@ -40,11 +40,15 @@ def parse_args():
     parser.add_argument("-n", "--processors_number",
                         metavar="N", type=int, default=None,
                         help="Number of processors")
+    parser.add_argument("-t", "--topology_path",
+                        metavar="PATH", type=str,
+                        default='output/topologies/topology_0.pdb',
+                        help="Relativo path to topology")
 
     args = parser.parse_args()
 
     return args.cfs_path, args.ligand_resname, args.distance, args.angle, \
-        args.pseudo_hb, args.processors_number
+        args.pseudo_hb, args.processors_number, args.topology_path
 
 
 def find_hbonds_in_trajectory(lig_resname, distance, angle, pseudo, traj):
@@ -81,8 +85,8 @@ def find_hbond_in_snapshot(snapshot, lig, distance, angle, pseudo):
 
 def main():
     # Parse args
-    cfs_path, lig_resname, distance, angle, pseudo_hb, proc_number = \
-        parse_args()
+    cfs_path, lig_resname, distance, angle, pseudo_hb, proc_number, \
+        topology_path = parse_args()
     cfs_path = glob.glob(cfs_path)
 
     for cf_path in cfs_path:
@@ -93,9 +97,7 @@ def main():
         cf = builder.build()
         sim = cf.getSimulation()
         sim.set_topology_path(
-            cf_path.parent.joinpath('output/topologies/topology_0.pdb'))
-        # sim.set_topology_path(
-        #     cf_path.parent.joinpath('output/topologies/conntopology_0.pdb'))
+            cf_path.parent.joinpath(topology_path))
         sim.getOutputFiles()
 
         print('  - Detecting hydrogen bonds...')
