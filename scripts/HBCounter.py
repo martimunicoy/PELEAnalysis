@@ -24,6 +24,7 @@ __email__ = "marti.municoy@bsc.es, carles.perez@bsc.es"
 def parse_args():
     parser = ap.ArgumentParser()
     parser.add_argument("cfs_path", metavar="PATH", type=str,
+                        nargs='*',
                         help="Path to PELE control files")
     parser.add_argument("-l", "--ligand_resname",
                         metavar="LIG", type=str, default='LIG',
@@ -128,13 +129,17 @@ def main():
     # Parse args
     cfs_path, lig_resname, distance, angle, pseudo_hb, proc_number, \
         topology_path = parse_args()
-    cfs_path = glob.glob(cfs_path)
+
+    cfs_path_list = []
+    if (type(cfs_path) == list):
+        for cf_path in cfs_path:
+            cfs_path_list += glob.glob(cf_path)
 
     _parallel_loop = partial(parallel_loop, lig_resname, distance, angle,
                              pseudo_hb, proc_number, topology_path)
 
     with Pool(proc_number) as pool:
-        pool.map(_parallel_loop, cfs_path)
+        pool.map(_parallel_loop, cfs_path_list)
 
 
 if __name__ == "__main__":
