@@ -7,9 +7,12 @@ import argparse as ap
 import glob
 from pathlib import Path
 from multiprocessing import Pool
+from functools import partial
+
+# External imports
+import mdtraj as md
 
 # PELE imports
-from PELETools import ControlFileParser as cfp
 from PELETools.External import hbond_mod as hbm
 
 # Script information
@@ -22,9 +25,9 @@ __email__ = "marti.municoy@bsc.es, carles.perez@bsc.es"
 
 def parse_args():
     parser = ap.ArgumentParser()
-    parser.add_argument("cfs_path", metavar="PATH", type=str,
+    parser.add_argument("traj_paths", metavar="PATH", type=str,
                         nargs='*',
-                        help="Path to PELE control files")
+                        help="Path to PELE trajectory files")
     parser.add_argument("-l", "--ligand_resname",
                         metavar="LIG", type=str, default='LIG',
                         help="Ligand residue name")
@@ -47,11 +50,13 @@ def parse_args():
 
     args = parser.parse_args()
 
-    return args.cfs_path, args.ligand_resname, args.distance, args.angle, \
+    return args.traj_paths, args.ligand_resname, args.distance, args.angle, \
         args.pseudo_hb, args.processors_number, args.topology_path
 
 
-def find_hbonds_in_trajectory(lig_resname, distance, angle, pseudo, traj):
+def find_hbonds_in_trajectory(lig_resname, distance, angle, pseudo,
+                              topology_path, traj_path):
+    traj = md.load_xtc(str(traj_path), top=str(topology_path))
     lig = traj.topology.select('resname {}'.format(lig_resname))
     hbonds_in_traj = find_ligand_hbonds(traj, lig, distance, angle, pseudo)
 
@@ -86,54 +91,40 @@ def find_hbond_in_snapshot(snapshot, lig, distance, angle, pseudo):
 
 def main():
     # Parse args
-    cfs_path, lig_resname, distance, angle, pseudo_hb, proc_number, \
+    PELE_sim_paths, lig_resname, distance, angle, pseudo_hb, proc_number, \
         topology_path = parse_args()
 
-    cfs_path_list = []
-    if (type(cfs_path) == list):
-        for cf_path in cfs_path:
-            cfs_path_list += glob.glob(cf_path)
+    PELE_sim_paths_list = []
+    if (type(PELE_sim_paths) == list):
+        for PELE_sim_path in PELE_sim_paths:
+            PELE_sim_paths_list += glob.glob(PELE_sim_path)
+    else:
+        PELE_sim_paths_list = glob.glob(PELE_sim_paths)
 
-    for cf_path in cfs_path_list:
-        # Avoid doing extra work
-        cf_path = Path(cf_path)
-        print('- Found control file: {}'.format(cf_path))
-        if (cf_path.parent.joinpath('hbonds.out').is_file()):
-            print('  - Skipping because \'hbonds.out\' already exists')
-            return
+    for PELE_sim_path in PELE_sim_paths_list:
+        PELE_sim_path = Path(PELE_sim_path)
+        PELE_output_path = PELE_sim_path.joinpath('output')
 
-        print('  - Parsing trajectories...')
-        builder = cfp.ControlFileBuilder(cf_path)
-        cf = builder.build()
-        sim = cf.getSimulation()
-        sim.set_topology_path(cf_path.parent.joinpath(topology_path))
-        sim.getOutputFiles()
-
-        print('  - Detecting hydrogen bonds...')
         hbonds_dict = {}
-        for epoch in sim:
-            p = Pool(proc_number)
-            multi = []
-            for report in epoch:
-                multi.append(p.apply_async(
-                    find_hbonds_in_trajectory,
-                    [lig_resname, distance, angle,
-                     pseudo_hb, report.trajectory.data]))
 
-            for report, process in zip(epoch, multi):
-                hbonds_dict[(report.epoch.index, report.trajectory.name)] = \
-                    process.get()
-                report.trajectory.clear_data()
+        parallel_function = partial(find_hbonds_in_trajectory, lig_resname,
+                                    distance, angle, pseudo_hb, topology_path)
 
-            p.close()
-            p.join()
+        for epoch in PELE_output_path.glob('[0-9]*'):
+            with Pool(proc_number) as pool:
+                results = pool.map(parallel_function,
+                                   epoch.glob('trajectory*xtc'))
+                print(results)
 
-        with open(cf_path.parent.joinpath('hbonds.out'), 'w') as file:
-            file.write(str(cf_path.parent.parent) + '\n')
+            for r, traj_path in zip(results, epoch.glob('trajectory*xtc')):
+                hbonds_dict[(epoch, traj_path)] = r
+
+        with open(str(PELE_sim_path.joinpath('hbonds.out')), 'w') as file:
+            file.write(str(PELE_sim_path) + '\n')
             for (epoch, traj_name), hbonds in hbonds_dict.items():
                 for model, hbs in hbonds.items():
                     file.write('{}    {:^15}    {:3d}    '.format(
-                        epoch.index, traj_name, model))
+                        str(epoch), str(traj_name), model))
 
                     for hb in hbs[:-1]:
                         file.write('{},'.format(hb))
