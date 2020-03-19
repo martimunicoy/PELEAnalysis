@@ -3,12 +3,11 @@
 
 
 # Standard imports
+import argparse as ap
 import glob
 from pathlib import Path
 from multiprocessing import Pool
-
-# External imports
-import numpy as np
+from functools import partial
 
 # PELE imports
 from PELETools import ControlFileParser as cfp
@@ -22,36 +21,54 @@ __maintainer__ = "Marti Municoy, Carles Perez"
 __email__ = "marti.municoy@bsc.es, carles.perez@bsc.es"
 
 
-LIGAND_RESNAME = 'LIG'
-DISTANCE = 0.25
-ANGLE = 2.0 * np.pi / 3.0
-PSEUDO_HB = False
-NUMBER_OF_PROCESSORS = 4
+def parse_args():
+    parser = ap.ArgumentParser()
+    parser.add_argument("cfs_path", metavar="PATH", type=str,
+                        help="Path to PELE control files")
+    parser.add_argument("-l", "--ligand_resname",
+                        metavar="LIG", type=str, default='LIG',
+                        help="Ligand residue name")
+    parser.add_argument("-d", "--distance",
+                        metavar="D", type=float, default='0.25',
+                        help="Hydrogen bonds distance")
+    parser.add_argument("-a", "--angle",
+                        metavar="A", type=float, default='2.0943951023931953',
+                        help="Hydrogen bonds angle")
+    parser.add_argument("-p", "--pseudo_hb",
+                        metavar="BOOL", type=bool, default=False,
+                        help="Look for pseudo hydrogen bonds")
+    parser.add_argument("-n", "--processors_number",
+                        metavar="N", type=int, default=None,
+                        help="Number of processors")
+
+    args = parser.parse_args()
+
+    return args.cfs_path, args.ligand_resname, args.distance, args.angle, \
+        args.pseudo_hb, args.processors_number
 
 
-def find_hbonds_in_trajectory(traj):
+def find_hbonds_in_trajectory(traj, lig_resname, distance, angle, pseudo):
     # Access to mdtraj's trajectory object
     traj = traj.data
-    lig = traj.topology.select('resname {}'.format(LIGAND_RESNAME))
-    hbonds_in_traj = find_ligand_hbonds(traj, lig)
+    lig = traj.topology.select('resname {}'.format(lig_resname))
+    hbonds_in_traj = find_ligand_hbonds(traj, lig, distance, angle, pseudo)
 
     return hbonds_in_traj
 
 
-def find_ligand_hbonds(traj, lig):
-    #hbonds_lig = {}
+def find_ligand_hbonds(traj, lig, distance, angle, pseudo):
     hbonds_dict = {}
     for model_id, snapshot in enumerate(traj):
-        results = find_hbond_in_snapshot(snapshot, lig)
-        print([(traj.topology.atom(i[0]), traj.topology.atom(i[1]), traj.topology.atom(i[2])) for i in results])
+        results = find_hbond_in_snapshot(snapshot, lig, distance, angle,
+                                         pseudo)
         hbonds_dict[model_id] = results
 
     return hbonds_dict
 
 
-def find_hbond_in_snapshot(snapshot, lig):
-    hbonds = hbm.baker_hubbard(traj=snapshot, distance=DISTANCE, angle=ANGLE,
-                               pseudo=PSEUDO_HB)
+def find_hbond_in_snapshot(snapshot, lig, distance, angle, pseudo):
+    hbonds = hbm.baker_hubbard(traj=snapshot, distance=distance, angle=angle,
+                               pseudo=pseudo)
 
     results = []
     for hbond in hbonds:
@@ -64,9 +81,9 @@ def find_hbond_in_snapshot(snapshot, lig):
 
 def main():
     # Parse args
-    #args = parse_args()
-    cfs_path = glob.glob(
-        '/Volumes/MacintoshExternal2/COVID/*/adaptive.conf')
+    cfs_path, lig_resname, distance, angle, pseudo_hb, proc_number = \
+        parse_args()
+    cfs_path = glob.glob(cfs_path)
 
     for cf_path in cfs_path:
         print('- Found control file: {}'.format(cf_path))
@@ -79,14 +96,16 @@ def main():
             cf_path.parent.joinpath('output/topologies/topology_0.pdb'))
         # sim.set_topology_path(
         #     cf_path.parent.joinpath('output/topologies/conntopology_0.pdb'))
-        sim.getOutputFiles(NUMBER_OF_PROCESSORS)
+        sim.getOutputFiles()
 
         print('  - Detecting hydrogen bonds...')
         hbonds_dict = {}
+        parallel_function = partial(find_hbonds_in_trajectory,
+                                    lig_resname, distance, angle, pseudo_hb)
         for epoch in sim:
             print('    - Epoch {}'.format(epoch.index))
-            with Pool(NUMBER_OF_PROCESSORS) as pool:
-                results = pool.map(find_hbonds_in_trajectory,
+            with Pool(proc_number) as pool:
+                results = pool.map(parallel_function,
                                    [report.trajectory for report in epoch])
 
             for i, traj in enumerate([report.trajectory for report in epoch]):
