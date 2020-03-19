@@ -5,6 +5,7 @@
 # Standard imports
 import glob
 from pathlib import Path
+from multiprocessing import Pool
 
 # External imports
 import numpy as np
@@ -25,9 +26,12 @@ LIGAND_RESNAME = 'LIG'
 DISTANCE = 0.25
 ANGLE = 2.0 * np.pi / 3.0
 PSEUDO_HB = False
+NUMBER_OF_PROCESSORS = 4
 
 
 def find_hbonds_in_trajectory(traj):
+    # Access to mdtraj's trajectory object
+    traj = traj.data
     lig = traj.topology.select('resname {}'.format(LIGAND_RESNAME))
     hbonds_in_traj = find_ligand_hbonds(traj, lig)
 
@@ -65,6 +69,8 @@ def main():
         '/Volumes/MacintoshExternal2/COVID/*/adaptive.conf')
 
     for cf_path in cfs_path:
+        print('- Found control file: {}'.format(cf_path))
+        print('  - Parsing trajectories...')
         cf_path = Path(cf_path)
         builder = cfp.ControlFileBuilder(
             '/Volumes/MacintoshExternal2/COVID/6LU7_MOL0300_bis/adaptive.conf')
@@ -74,14 +80,18 @@ def main():
             cf_path.parent.joinpath('output/topologies/topology_0.pdb'))
         # sim.set_topology_path(
         #     cf_path.parent.joinpath('output/topologies/conntopology_0.pdb'))
-        sim.getOutputFiles()
+        sim.getOutputFiles(NUMBER_OF_PROCESSORS)
 
+        print('  - Detecting hydrogen bonds...')
         hbonds_dict = {}
         for epoch in sim:
-            for report in epoch:
-                trajectory = report.trajectory
-                hbonds_dict[(epoch.index, trajectory.name)] = \
-                    find_hbonds_in_trajectory(trajectory.data)
+            print('    - Epoch {}'.format(epoch.index))
+            with Pool(NUMBER_OF_PROCESSORS) as pool:
+                results = pool.map(find_hbonds_in_trajectory,
+                                   [report.trajectory for report in epoch])
+
+            for i, traj in enumerate([report.trajectory for report in epoch]):
+                hbonds_dict[(epoch, traj.name)] = results[i]
 
 
 if __name__ == "__main__":
