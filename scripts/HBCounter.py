@@ -78,7 +78,10 @@ def find_hbond_in_snapshot(snapshot, lig, distance, angle, pseudo):
     for hbond in hbonds:
         if (any(atom in lig for atom in hbond) and not
                 all(atom in hbond for atom in lig)):
-            results.append(hbond)
+            for atom in hbond:
+                if (atom not in lig):
+                    results.append(snapshot.topology.atom(atom))
+                    break
 
     return results
 
@@ -105,13 +108,23 @@ def main():
         parallel_function = partial(find_hbonds_in_trajectory,
                                     lig_resname, distance, angle, pseudo_hb)
         for epoch in sim:
-            print('    - Epoch {}'.format(epoch.index))
             with Pool(proc_number) as pool:
                 results = pool.map(parallel_function,
                                    [report.trajectory for report in epoch])
 
             for i, traj in enumerate([report.trajectory for report in epoch]):
                 hbonds_dict[(epoch, traj.name)] = results[i]
+
+        with open(cf_path.parent.joinpath('hbonds.out'), 'w') as file:
+            for (epoch, traj_name), hbonds in hbonds_dict.items():
+                for model, hbs in hbonds.items():
+                    file.write('{}    {:^15}    {:3d}    '.format(
+                        epoch.index, traj_name, model))
+
+                    for hb in hbs:
+                        file.write('{},'.format(hb))
+
+                    file.write('\n')
 
 
 if __name__ == "__main__":
