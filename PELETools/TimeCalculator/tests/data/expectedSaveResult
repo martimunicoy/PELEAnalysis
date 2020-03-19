@@ -1,0 +1,42 @@
+PELE Step time: 
+---Average time: 47.209264999999995
+---Highest time: 111.653
+---Highest time file path: tests/data/logFile_4.txt
+---Lowest time: 16.2289
+---Lowest time file path: tests/data/logFile_3.txt
+
+PELE Perturbation time: 
+---Average time: 4.0763705
+---Highest time: 6.95409
+---Highest time file path: tests/data/logFile_1.txt
+---Lowest time: 2.84781
+---Lowest time file path: tests/data/logFile_2.txt
+
+PELE Water Perturbation time: 
+---Average time: 3.0151575
+---Highest time: 3.6495
+---Highest time file path: tests/data/logFile_2.txt
+---Lowest time: 2.69748
+---Lowest time file path: tests/data/logFile_2.txt
+
+PELE ANM time: 
+---Average time: 9.579593333333333
+---Highest time: 21.134
+---Highest time file path: tests/data/logFile_1.txt
+---Lowest time: 3.84238
+---Lowest time file path: tests/data/logFile_3.txt
+
+PELE SideChain time: 
+---Average time: 5.227150833333334
+---Highest time: 8.20684
+---Highest time file path: tests/data/logFile_3.txt
+---Lowest time: 2.51079
+---Lowest time file path: tests/data/logFile_4.txt
+
+PELE Minimization time: 
+---Average time: 32.19217647058824
+---Highest time: 89.3784
+---Highest time file path: tests/data/logFile_4.txt
+---Lowest time: 11.9417
+---Lowest time file path: tests/data/logFile_3.txt
+
