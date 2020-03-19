@@ -8,6 +8,8 @@ import glob
 import sys
 from pathlib import Path
 
+# External imports
+import mdtraj as md
 
 # PELE imports
 from . import Plotter
@@ -89,10 +91,13 @@ class DummyEpoch(Epoch):
 
 
 class EpochBuilder(object):
-    def __init__(self, report_name, trajectory_name, logfile_name):
+    def __init__(self, report_name, trajectory_name, trajectory_type,
+                 logfile_name, topology_path):
         self.report_name = report_name
         self.trajectory_name = trajectory_name
+        self.trajectory_type = trajectory_type
         self.logfile_name = logfile_name
+        self.topology_path = topology_path
 
     def build(self, epoch_directory):
         # Build epoch
@@ -135,7 +140,8 @@ class EpochBuilder(object):
 
     def _build_trajectory(self, report):
         trajectory_path = report.path.parent.absolute().joinpath(
-            self.trajectory_name + '_' + str(report.id) + '.pdb')
+            self.trajectory_name + '_' + str(report.id) + '.' +
+            self.trajectory_type)
 
         if (not trajectory_path.is_file()):
             print('EpochBuilder.build Warning: trajectory for \'' +
@@ -143,9 +149,20 @@ class EpochBuilder(object):
 
             return None
 
-        return Trajectory(trajectory_path, report)
+        if (self.trajectory_type == 'pdb'):
+            return PDBTrajectory(trajectory_path)
+        elif (self.trajectory_type == 'xtc'):
+            return XTCTrajectory(trajectory_path, self.topology_path)
+        else:
+            print('EpochBuilder.build Warning: invalid trajectory type '
+                  '\'{}\' for '.format(self.trajectory_type) +
+                  '\'{}\''.format(report))
+            return None
 
     def _build_logfile(self, report):
+        if (self.logfile_name is None):
+            return None
+
         logfile_path = report.path.parent.absolute().joinpath(
             self.logfile_name + '_' + str(report.id) + '.txt')
 
@@ -162,8 +179,10 @@ class EpochBuilder(object):
 
 
 class DummyEpochBuilder(EpochBuilder):
-    def __init__(self, report_name, trajectory_name, logfile_name):
-        super().__init__(report_name, trajectory_name, logfile_name)
+    def __init__(self, report_name, trajectory_name, trajectory_type,
+                 logfile_name, topology_path):
+        super().__init__(report_name, trajectory_name, trajectory_type,
+                         logfile_name, topology_path)
 
     def build(self, epoch_directory):
         # Build epoch
@@ -175,11 +194,14 @@ class DummyEpochBuilder(EpochBuilder):
 
 class Simulation(object):
     def __init__(self, output_directory, report_name="report_",
-                 trajectory_name="trajectory_", logfile_name="logFile_"):
+                 trajectory_name="trajectory_", trajectory_type="pdb",
+                 logfile_name="logFile_", topology_path=None):
         self._output_directory = Path(output_directory)
         self._report_name = report_name
         self._trajectory_name = trajectory_name
+        self._trajectory_type = trajectory_type
         self._logfile_name = logfile_name
+        self._topology_path = topology_path
         self._epochs = []
         self.iterateOverReports = None
         self.PDBHandler = PDBHandler(self)
@@ -201,8 +223,16 @@ class Simulation(object):
         return self._trajectory_name
 
     @property
+    def trajectory_type(self):
+        return self._trajectory_type
+
+    @property
     def logfile_name(self):
         return self._logfile_name
+
+    @property
+    def topology_path(self):
+        return self._topology_path
 
     @property
     def epochs(self):
@@ -255,17 +285,20 @@ class Simulation(object):
 
 class AdaptiveSimulation(Simulation):
     def __init__(self, output_directory, report_name="run_report_",
-                 trajectory_name="run_trajectory_", logfile_name="logFile_"):
+                 trajectory_name="run_trajectory_", trajectory_type="pdb",
+                 logfile_name="logFile_", topology_path=None):
         self._type = "Adaptive"
         Simulation.__init__(self, output_directory, report_name,
-                            trajectory_name, logfile_name)
+                            trajectory_name, trajectory_type, logfile_name,
+                            topology_path)
 
     def _scanForOutputFiles(self):
         self._initiateCounters()
         self._epochs = []
 
         epoch_builder = EpochBuilder(self.report_name, self.trajectory_name,
-                                     self.logfile_name)
+                                     self.trajectory_type, self.logfile_name,
+                                     self.topology_path)
 
         for subdir in self.output_directory.iterdir():
             if (str(subdir.name).isdigit()):
@@ -280,10 +313,11 @@ class AdaptiveSimulation(Simulation):
 
 class PELESimulation(Simulation):
     def __init__(self, directories, report_name="run_report_",
-                 trajectory_name="run_trajectory_", logfile_name="logFile_"):
+                 trajectory_name="run_trajectory_", trajectory_type="pdb",
+                 logfile_name="logFile_", topology_path=None):
         self._type = "PELE"
         Simulation.__init__(self, directories, report_name, trajectory_name,
-                            logfile_name)
+                            trajectory_type, logfile_name, topology_path)
 
     def _scanForOutputFiles(self):
         self._initiateCounters()
@@ -291,7 +325,9 @@ class PELESimulation(Simulation):
 
         epoch_builder = DummyEpochBuilder(self.report_name,
                                           self.trajectory_name,
-                                          self.logfile_name)
+                                          self.trajectory_type,
+                                          self.logfile_name,
+                                          self.topology_path)
 
         epoch = epoch_builder.build(self.output_directory)
         self._epochs.append(epoch)
@@ -477,6 +513,11 @@ class Trajectory:
     def models(self):
         return self._report.models
 
+
+class PDBTrajectory(Trajectory):
+    def __init__(self, path, report=None):
+        super().__init__(path, report)
+
     def isAtomThere(self, atom_data):
         _, _, atom_name = atom_data
         atom_name = atom_name.replace("_", " ")
@@ -497,36 +538,7 @@ class Trajectory:
         atom_name = atom_name.replace("_", " ")
         atom_data[2] = atom_name
 
-        """
-        if ((self.PDBHandler is not None) and
-                (self.PDBHandler.are_atoms_indexed)):
-            return self._getAtomsFromIndexedAtoms(atom_data)
-        """
-
         return self._getAtomsFromNonIndexedAtoms(atom_data)
-
-    """
-    def _getAtomsFromIndexedAtoms(self, atom_data):
-        list_of_atoms = []
-        model = 0
-        atom_line = self.PDBHandler.getAtomLineInPDB(atom_data)
-
-        with open(self.path + "/" + self.name) as trajectory_file:
-
-            for i, line in enumerate(trajectory_file):
-                if (int(i / (self.PDBHandler.system_size + 1)) != model):
-                    model += 1
-
-                if (not self.models.active[model]):
-                    continue
-
-                current_line = i - (self.PDBHandler.system_size + 1) * model
-
-                if (current_line == atom_line):
-                    list_of_atoms.append(atomBuilder(line))
-
-        return list_of_atoms
-    """
 
     def _getAtomsFromNonIndexedAtoms(self, atom_data):
         list_of_atoms = []
@@ -538,59 +550,8 @@ class Trajectory:
 
         return list_of_atoms
 
-    """
-    def isLinkThere(self, link_data):
-        if (self.PDBHandler.system_size is None):
-            self.PDBHandler.system_size = self.PDBHandler.getSystemSize()
-
-        with open(self.path + "/" + self.name) as trajectory_file:
-            if (self.PDBHandler is not None):
-                for i, line in enumerate(trajectory_file):
-                    if (containsLink(line, link_data)):
-                        return True
-                    if (i > self.PDBHandler.system_size):
-                        break
-
-        return False
-    """
-
     def getLinks(self, link_data):
-        """
-        if ((self.PDBHandler is not None) and
-                (self.PDBHandler.are_atoms_indexed)):
-            return self._getLinksFromIndexedAtoms(link_data)
-        """
-
         return self._getLinksFromNonIndexedAtoms(link_data)
-
-    """
-    def _getLinksFromIndexedAtoms(self, link_data):
-        links_list = []
-        lines = \
-            self.PDBHandler.getLinkLinesInPDB(link_data).values()
-
-        with open(self.path + "/" + self.name) as trajectory_file:
-            list_of_atoms = []
-            model = 0
-            for i, line in enumerate(trajectory_file):
-                if (self.PDBHandler.currentModel(i) != model):
-                    if self.models.active[model]:
-                        links_list.append(linkBuilder(list_of_atoms))
-                        list_of_atoms = []
-                    model += 1
-
-                if (not self.models.active[model]):
-                    continue
-
-                current_line = i - (self.PDBHandler.system_size + 1) * model
-
-                if (current_line in lines):
-                    list_of_atoms.append(atomBuilder(line))
-
-        links_list.append(linkBuilder(list_of_atoms))
-
-        return links_list
-    """
 
     def _getLinksFromNonIndexedAtoms(self, link_data):
         links_list = []
@@ -617,13 +578,6 @@ class Trajectory:
 
         return links_list
 
-    """
-    def goToNextModelLine(self, file):
-        for i in range(0, self.PDBHandler.getSystemSize()):
-            file.readline()
-        return file.readline()
-    """
-
     def writeModel(self, model_id, output_path):
         model_out = ""
         with open(self.path + "/" + self.name) as trajectory_file:
@@ -649,6 +603,24 @@ class Trajectory:
 
         with open(output_path, 'w') as output_file:
             output_file.write(model_out)
+
+
+class XTCTrajectory(Trajectory):
+    def __init__(self, path, path_to_topology, report=None):
+        super().__init__(path, report)
+        if (path_to_topology is None):
+            raise TypeError("XTCTrajectory Error: Topology file is required" +
+                            "when attempting to load an XTC trajectory")
+        self._path_to_topology = Path(path_to_topology)
+        self._data = md.load_xtc(str(path), top=str(path_to_topology))
+
+    @property
+    def path_to_topology(self):
+        return self._path_to_topology
+
+    @property
+    def data(self):
+        return self._data
 
 
 class Logfile:
@@ -767,7 +739,9 @@ def simulationBuilderFromAdaptiveCF(adaptive_cf, pele_cf=None):
 
     report_name = None
     trajectory_name = None
+    trajectory_type = None
     logfile_name = None
+    topology_path = None
 
     if (pele_cf is not None):
         for command in pele_cf.data["commands"]:
@@ -777,7 +751,7 @@ def simulationBuilderFromAdaptiveCF(adaptive_cf, pele_cf=None):
                 report_name = report_name.split('.')[0]
                 trajectory_name = command["PELE_Output"]["trajectoryPath"]
                 trajectory_name = trajectory_name.split('/')[-1]
-                trajectory_name = trajectory_name.split('.')[0]
+                trajectory_name, trajectory_type = trajectory_name.split('.')
         try:
             logfile_name = pele_cf.data["simulationLogPath"]
             logfile_name = logfile_name.split('/')[-1]
@@ -787,10 +761,16 @@ def simulationBuilderFromAdaptiveCF(adaptive_cf, pele_cf=None):
             # is missing
             pass
 
+    if (trajectory_type == 'xtc'):
+        topology_path =  adaptive_cf.path.parent.joinpath(
+            adaptive_cf.data["generalParams"]["initialStructures"][0])
+
     simulation = AdaptiveSimulation(simulation_dir,
                                     report_name=report_name,
                                     trajectory_name=trajectory_name,
-                                    logfile_name=logfile_name)
+                                    trajectory_type=trajectory_type,
+                                    logfile_name=logfile_name,
+                                    topology_path=topology_path)
     simulation.getOutputFiles()
 
     return simulation
