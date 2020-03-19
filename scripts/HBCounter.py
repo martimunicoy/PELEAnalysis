@@ -72,8 +72,7 @@ def main():
         print('- Found control file: {}'.format(cf_path))
         print('  - Parsing trajectories...')
         cf_path = Path(cf_path)
-        builder = cfp.ControlFileBuilder(
-            '/Volumes/MacintoshExternal2/COVID/6LU7_MOL0300_bis/adaptive.conf')
+        builder = cfp.ControlFileBuilder(cf_path)
         cf = builder.build()
         sim = cf.getSimulation()
         sim.set_topology_path(
