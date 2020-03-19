@@ -9,6 +9,7 @@ from multiprocessing import Pool
 
 # External imports
 import numpy as np
+import pandas as pd
 
 # PELE imports
 from PELETools import ControlFileParser as cfp
@@ -62,11 +63,18 @@ def find_hbond_in_snapshot(snapshot, lig):
     return results
 
 
+def fill_report_row(df_to_fill, traj_file, epoch, snap, hbond):
+    df = pd.DataFrame({"trajectory_file": traj_file, "epoch": epoch,
+                       "snapshot": snap, "hbond": hbond})
+    df_to_fill.append(df)
+
+
 def main():
     # Parse args
     #args = parse_args()
     cfs_path = glob.glob(
-        '/Volumes/MacintoshExternal2/COVID/*/adaptive.conf')
+        '/home/carles/test/adaptive.conf')
+    print(cfs_path)
 
     for cf_path in cfs_path:
         print('- Found control file: {}'.format(cf_path))
@@ -83,6 +91,8 @@ def main():
 
         print('  - Detecting hydrogen bonds...')
         hbonds_dict = {}
+        report = pd.DataFrame(columns=["trajectory_file", "epoch",
+                                         "snapshot", "hbond"])
         for epoch in sim:
             print('    - Epoch {}'.format(epoch.index))
             with Pool(NUMBER_OF_PROCESSORS) as pool:
@@ -91,6 +101,13 @@ def main():
 
             for i, traj in enumerate([report.trajectory for report in epoch]):
                 hbonds_dict[(epoch, traj.name)] = results[i]
+
+        for key, hbonds in items.hbonds_dict:
+            epoch, traj = key
+            for model, hbond in items.hbonds:
+                fill_report_row(report, traj_file=traj, epoch=epoch,
+                                snap=model, hbond=hbond)
+        print(report)
 
 
 if __name__ == "__main__":
