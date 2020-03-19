@@ -258,8 +258,8 @@ class Simulation(object):
         self._n_trajectories = 0
         self._n_models = 0
 
-    def getOutputFiles(self, number_of_processors=None):
-        self._scanForOutputFiles(number_of_processors)
+    def getOutputFiles(self):
+        self._scanForOutputFiles()
 
     def __iter__(self):
         self._iter_index = 0
@@ -295,7 +295,7 @@ class AdaptiveSimulation(Simulation):
                             trajectory_name, trajectory_type, logfile_name,
                             topology_path)
 
-    def _scanForOutputFiles(self, number_of_processors):
+    def _scanForOutputFiles(self):
         self._initiateCounters()
         self._epochs = []
 
@@ -322,7 +322,7 @@ class PELESimulation(Simulation):
         Simulation.__init__(self, directories, report_name, trajectory_name,
                             trajectory_type, logfile_name, topology_path)
 
-    def _scanForOutputFiles(self, number_of_processors):
+    def _scanForOutputFiles(self):
         self._initiateCounters()
         self._epochs = []
 
@@ -615,7 +615,8 @@ class XTCTrajectory(Trajectory):
             raise TypeError("XTCTrajectory Error: Topology file is required" +
                             "when attempting to load an XTC trajectory")
         self._path_to_topology = Path(path_to_topology)
-        self._data = md.load_xtc(str(path), top=str(path_to_topology))
+        #self._data = md.load_xtc(str(path), top=str(path_to_topology))
+        self._data = None
 
     @property
     def path_to_topology(self):
@@ -623,7 +624,13 @@ class XTCTrajectory(Trajectory):
 
     @property
     def data(self):
+        if (self._data is None):
+            self._data = md.load_xtc(str(self.path),
+                                     top=str(self.path_to_topology))
         return self._data
+
+    def clear_data(self):
+        self._data = None
 
 
 class Logfile:
