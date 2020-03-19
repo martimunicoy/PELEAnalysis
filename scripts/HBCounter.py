@@ -101,13 +101,15 @@ def main():
     else:
         PELE_sim_paths_list = glob.glob(PELE_sim_paths)
 
+    print(PELE_sim_paths_list)
+
     for PELE_sim_path in PELE_sim_paths_list:
         print(' - Analyzing {}'.format(PELE_sim_path))
         PELE_sim_path = Path(PELE_sim_path)
         PELE_output_path = PELE_sim_path.joinpath('output')
         topology_path = PELE_sim_path.joinpath(topology_path)
 
-        hbonds_dict = {}
+        results = []
 
         parallel_function = partial(find_hbonds_in_trajectory, lig_resname,
                                     distance, angle, pseudo_hb, topology_path)
@@ -115,13 +117,15 @@ def main():
         for epoch in PELE_output_path.glob('[0-9]*'):
             print('   - Analyzing {}'.format(epoch))
             with Pool(proc_number) as pool:
-                results = pool.map(parallel_function,
-                                   epoch.glob('trajectory*xtc'))
+                results += pool.map(parallel_function,
+                                    epoch.glob('trajectory*xtc'))
                 print(results)
 
-            for r, traj_path in zip(results, epoch.glob('trajectory*xtc')):
-                hbonds_dict[traj_path] = r
+        with open(str(PELE_sim_path.joinpath('hbonds.out')), 'w') as file:
+            for r in results:
+                file.write(r + '\n')
 
+        """
         with open(str(PELE_sim_path.joinpath('hbonds.out')), 'w') as file:
             file.write(str(PELE_sim_path) + '\n')
             for traj_name, hbonds in hbonds_dict.items():
@@ -135,6 +139,7 @@ def main():
                     file.write('{}'.format(hbs[-1]))
 
                     file.write('\n')
+        """
 
 
 if __name__ == "__main__":
