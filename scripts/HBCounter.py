@@ -7,7 +7,6 @@ import argparse as ap
 import glob
 from pathlib import Path
 from multiprocessing import Pool
-from functools import partial
 
 # PELE imports
 from PELETools import ControlFileParser as cfp
@@ -122,7 +121,9 @@ def main():
                      pseudo_hb, report.trajectory.data]))
 
             for report, process in zip(epoch, multi):
-                hbonds_dict[(epoch, report.trajectory.name)] = process.get()
+                hbonds_dict[(report.epoch.index, report.trajectory.name)] = \
+                    process.get()
+                report.trajectory.clear_data()
 
             p.close()
             p.join()
