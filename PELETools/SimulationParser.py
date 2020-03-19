@@ -258,8 +258,8 @@ class Simulation(object):
         self._n_trajectories = 0
         self._n_models = 0
 
-    def getOutputFiles(self):
-        self._scanForOutputFiles()
+    def getOutputFiles(self, number_of_processors=None):
+        self._scanForOutputFiles(number_of_processors)
 
     def __iter__(self):
         self._iter_index = 0
@@ -295,7 +295,7 @@ class AdaptiveSimulation(Simulation):
                             trajectory_name, trajectory_type, logfile_name,
                             topology_path)
 
-    def _scanForOutputFiles(self):
+    def _scanForOutputFiles(self, number_of_processors):
         self._initiateCounters()
         self._epochs = []
 
@@ -322,7 +322,7 @@ class PELESimulation(Simulation):
         Simulation.__init__(self, directories, report_name, trajectory_name,
                             trajectory_type, logfile_name, topology_path)
 
-    def _scanForOutputFiles(self):
+    def _scanForOutputFiles(self, number_of_processors):
         self._initiateCounters()
         self._epochs = []
 
