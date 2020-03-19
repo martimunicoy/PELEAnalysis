@@ -116,10 +116,11 @@ def main():
 
         for epoch in PELE_output_path.glob('[0-9]*'):
             print('   - Analyzing {}'.format(epoch))
-            trajectories = epoch.glob('trajectory*xtc')
+            trajectories = [str(traj) for traj in epoch.glob('trajectory*xtc')]
             with Pool(proc_number) as pool:
                 results = pool.map(parallel_function,
                                    trajectories)
+                print(results)
 
             for r, t in zip(results, trajectories):
                 hbonds_dict[t] = r
