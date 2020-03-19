@@ -105,7 +105,7 @@ def main():
         print(' - Analyzing {}'.format(PELE_sim_path))
         PELE_sim_path = Path(PELE_sim_path)
         PELE_output_path = PELE_sim_path.joinpath('output')
-        topology_path = PELE_output_path.joinpath(topology_path)
+        topology_path = PELE_sim_path.joinpath(topology_path)
 
         hbonds_dict = {}
 
