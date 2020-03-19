@@ -272,6 +272,9 @@ class Simulation(object):
             self._iter_index += 1
             return self.epochs[self._iter_index - 1]
 
+    def set_topology_path(self, topology_path):
+        self._topology_path = topology_path
+
     # @TODO
     def plot(self, plot_type='ScatterPlot'):
         if (plot_type not in Plotter.PLOT_TYPES):
@@ -771,7 +774,6 @@ def simulationBuilderFromAdaptiveCF(adaptive_cf, pele_cf=None):
                                     trajectory_type=trajectory_type,
                                     logfile_name=logfile_name,
                                     topology_path=topology_path)
-    simulation.getOutputFiles()
 
     return simulation
 
@@ -795,6 +797,5 @@ def simulationBuilderFromPELECF(pele_cf):
                                 report_name=report_name,
                                 trajectory_name=trajectory_name,
                                 logfile_name=logfile_name)
-    simulation.getOutputFiles()
 
     return simulation
