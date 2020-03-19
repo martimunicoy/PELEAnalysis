@@ -66,7 +66,8 @@ def find_hbond_in_snapshot(snapshot, lig):
 def fill_report_row(df_to_fill, traj_file, epoch, snap, hbond):
     df = pd.DataFrame({"trajectory_file": traj_file, "epoch": epoch,
                        "snapshot": snap, "hbond": hbond})
-    df_to_fill.append(df)
+    df = df_to_fill.append(df)
+    return df
 
 
 def main():
