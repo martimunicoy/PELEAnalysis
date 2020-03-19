@@ -92,7 +92,7 @@ def find_hbond_in_snapshot(traj, model_id, lig, distance, angle, pseudo):
 def main():
     # Parse args
     PELE_sim_paths, lig_resname, distance, angle, pseudo_hb, proc_number, \
-        topology_path = parse_args()
+        topology_relative_path = parse_args()
 
     PELE_sim_paths_list = []
     if (type(PELE_sim_paths) == list):
@@ -107,7 +107,7 @@ def main():
         print(' - Analyzing {}'.format(PELE_sim_path))
         PELE_sim_path = Path(PELE_sim_path)
         PELE_output_path = PELE_sim_path.joinpath('output')
-        topology_path = PELE_sim_path.joinpath(topology_path)
+        topology_path = PELE_sim_path.joinpath(topology_relative_path)
 
         hbonds_dict = {}
 
