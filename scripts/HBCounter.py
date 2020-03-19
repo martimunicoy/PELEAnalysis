@@ -47,7 +47,7 @@ def parse_args():
         args.pseudo_hb, args.processors_number
 
 
-def find_hbonds_in_trajectory(traj, lig_resname, distance, angle, pseudo):
+def find_hbonds_in_trajectory(lig_resname, distance, angle, pseudo, traj):
     # Access to mdtraj's trajectory object
     traj = traj.data
     lig = traj.topology.select('resname {}'.format(lig_resname))
