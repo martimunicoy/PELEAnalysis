@@ -315,13 +315,13 @@ class DoubleBondSide(Metric):
     def _calculate(self, trajectory):
         values = []
 
-        atoms1 = trajectory.getAtoms(self.atom_name1)
+        atoms1 = trajectory.getAtoms(self.double_bond_atom1)
         if (len(atoms1) == 0):
             raise NameError('Atom {} '.format(self.double_bond_atom1)
                             + 'not found in {}/{}'.format(trajectory.path,
                                                           trajectory.name))
 
-        atoms2 = trajectory.getAtoms(self.atom_name2)
+        atoms2 = trajectory.getAtoms(self.double_bond_atom2)
         if (len(atoms2) == 0):
             raise NameError('Atom {} '.format(self.double_bond_atom2)
                             + 'not found in {}/{}'.format(trajectory.path,
@@ -329,13 +329,13 @@ class DoubleBondSide(Metric):
 
         atoms3 = trajectory.getAtoms(self.plane_atom_name3)
         if (len(atoms2) == 0):
-            raise NameError('Atom {} '.format(self.atom_name1)
+            raise NameError('Atom {} '.format(self.plane_atom_name3)
                             + 'not found in {}/{}'.format(trajectory.path,
                                                           trajectory.name))
 
         atoms4 = trajectory.getAtoms(self.outer_atom_name4)
         if (len(atoms2) == 0):
-            raise NameError('Atom {} '.format(self.atom_name1)
+            raise NameError('Atom {} '.format(self.outer_atom_name4)
                             + 'not found in {}/{}'.format(trajectory.path,
                                                           trajectory.name))
 
