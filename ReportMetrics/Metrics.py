@@ -237,7 +237,7 @@ class LinkRMSD(Metric):
                                                           simulation_atom)
 
             values.append(np.sqrt(sum_of_squared_distances /
-                          len(self.atom_pairs)))
+                                  len(self.atom_pairs)))
 
         return values
 
@@ -275,7 +275,7 @@ class LinkRMSD(Metric):
                                                           simulation_atom)
 
             values.append(np.sqrt(sum_of_squared_distances /
-                          len(self._reference_pairs.keys())))
+                                  len(self._reference_pairs.keys())))
 
         return values
 
@@ -284,3 +284,82 @@ class LinkRMSD(Metric):
             np.array(atom1.coords)
 
         return (vector_from_1_to_2**2).sum()
+
+
+class DoubleBondSide(Metric):
+    def __init__(self, double_bond_atom1, double_bond_atom2, plane_atom_name3,
+                 outer_atom_name4, metric_name="DoubleBondSide"):
+        Metric.__init__(self)
+        self._double_bond_atom1 = double_bond_atom1
+        self._double_bond_atom2 = double_bond_atom2
+        self._plane_atom_name3 = plane_atom_name3
+        self._outer_atom_name4 = outer_atom_name4
+        self._metric_name = metric_name
+
+    @property
+    def plane_atom_name1(self):
+        return self._plane_atom_name1
+
+    @property
+    def plane_atom_name2(self):
+        return self._plane_atom_name2
+
+    @property
+    def plane_atom_name3(self):
+        return self._plane_atom_name3
+
+    @property
+    def outer_atom_name(self):
+        return self._outer_atom_name
+
+    def _calculate(self, trajectory):
+        values = []
+
+        atoms1 = trajectory.getAtoms(self.atom_name1)
+        if (len(atoms1) == 0):
+            raise NameError('Atom {} '.format(self.plane_atom_name1)
+                            + 'not found in {}/{}'.format(trajectory.path,
+                                                          trajectory.name))
+
+        atoms2 = trajectory.getAtoms(self.atom_name2)
+        if (len(atoms2) == 0):
+            raise NameError('Atom {} '.format(self.plane_atom_name1)
+                            + 'not found in {}/{}'.format(trajectory.path,
+                                                          trajectory.name))
+
+        atoms3 = trajectory.getAtoms(self.plane_atom_name2)
+        if (len(atoms2) == 0):
+            raise NameError('Atom {} '.format(self.atom_name1)
+                            + 'not found in {}/{}'.format(trajectory.path,
+                                                          trajectory.name))
+
+        atoms4 = trajectory.getAtoms(self.atom_name4)
+        if (len(atoms2) == 0):
+            raise NameError('Atom {} '.format(self.atom_name1)
+                            + 'not found in {}/{}'.format(trajectory.path,
+                                                          trajectory.name))
+
+        assert len(atoms1) == len(atoms2) and len(atoms1) == len(atoms3) \
+            and len(atoms1) == len(atoms4), \
+            'We expect to find the same number of atoms for each supplied ' \
+            + 'atom name'
+
+        for atom1, atom2, atom3, atom4 in zip(atoms1, atoms2, atoms3, atoms4):
+            values.append(self._getPlane(atom1, atom2, atom3, atom4))
+
+        return values
+
+    def _getPlane(self, atom1, atom2, atom3, atom4):
+        face_sign = -1
+
+        if atom1 != atom2 and atom1 != atom3 and atom1 != atom4:
+            v1 = atom2 - atom1
+            v2 = atom3 - atom1
+            v3 = atom4 - atom1
+
+            if v1 != v2:
+                plane_norm_v = np.cross(v1, v2)
+
+                face_sign = int(np.dot(plane_norm_v, v3) > 0)
+
+        return face_sign
