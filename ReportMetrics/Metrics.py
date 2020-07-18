@@ -297,43 +297,43 @@ class DoubleBondSide(Metric):
         self._metric_name = metric_name
 
     @property
-    def plane_atom_name1(self):
-        return self._plane_atom_name1
+    def double_bond_atom1(self):
+        return self._double_bond_atom1
 
     @property
-    def plane_atom_name2(self):
-        return self._plane_atom_name2
+    def double_bond_atom2(self):
+        return self._double_bond_atom2
 
     @property
     def plane_atom_name3(self):
         return self._plane_atom_name3
 
     @property
-    def outer_atom_name(self):
-        return self._outer_atom_name
+    def outer_atom_name4(self):
+        return self._outer_atom_name4
 
     def _calculate(self, trajectory):
         values = []
 
         atoms1 = trajectory.getAtoms(self.atom_name1)
         if (len(atoms1) == 0):
-            raise NameError('Atom {} '.format(self.plane_atom_name1)
+            raise NameError('Atom {} '.format(self.double_bond_atom1)
                             + 'not found in {}/{}'.format(trajectory.path,
                                                           trajectory.name))
 
         atoms2 = trajectory.getAtoms(self.atom_name2)
         if (len(atoms2) == 0):
-            raise NameError('Atom {} '.format(self.plane_atom_name1)
+            raise NameError('Atom {} '.format(self.double_bond_atom2)
                             + 'not found in {}/{}'.format(trajectory.path,
                                                           trajectory.name))
 
-        atoms3 = trajectory.getAtoms(self.plane_atom_name2)
+        atoms3 = trajectory.getAtoms(self.plane_atom_name3)
         if (len(atoms2) == 0):
             raise NameError('Atom {} '.format(self.atom_name1)
                             + 'not found in {}/{}'.format(trajectory.path,
                                                           trajectory.name))
 
-        atoms4 = trajectory.getAtoms(self.atom_name4)
+        atoms4 = trajectory.getAtoms(self.outer_atom_name4)
         if (len(atoms2) == 0):
             raise NameError('Atom {} '.format(self.atom_name1)
                             + 'not found in {}/{}'.format(trajectory.path,
