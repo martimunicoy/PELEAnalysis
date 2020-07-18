@@ -353,9 +353,9 @@ class DoubleBondSide(Metric):
         face_sign = -1
 
         if atom1 != atom2 and atom1 != atom3 and atom1 != atom4:
-            v1 = atom2 - atom1
-            v2 = atom3 - atom1
-            v3 = atom4 - atom1
+            v1 = atom2.coords - atom1.coords
+            v2 = atom3.coords - atom1.coords
+            v3 = atom4.coords - atom1.coords
 
             if v1 != v2:
                 plane_norm_v = np.cross(v1, v2)
