@@ -352,12 +352,14 @@ class DoubleBondSide(Metric):
     def _getPlane(self, atom1, atom2, atom3, atom4):
         face_sign = -1
 
-        if atom1 != atom2 and atom1 != atom3 and atom1 != atom4:
+        if (not np.array_equal(atom1.coords, atom2.coords)
+                and not np.array_equal(atom1.coords, atom3.coords)
+                and not np.array_equal(atom1.coords, atom4.coords)):
             v1 = atom2.coords - atom1.coords
             v2 = atom3.coords - atom1.coords
             v3 = atom4.coords - atom1.coords
 
-            if v1 != v2:
+            if not np.array_equal(v1, v2):
                 plane_norm_v = np.cross(v1, v2)
 
                 face_sign = int(np.dot(plane_norm_v, v3) > 0)
