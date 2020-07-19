@@ -350,8 +350,6 @@ class DoubleBondSide(Metric):
         return values
 
     def _getPlane(self, atom1, atom2, atom3, atom4):
-        face_sign = -1
-
         if (not np.array_equal(atom1.coords, atom2.coords)
                 and not np.array_equal(atom1.coords, atom3.coords)
                 and not np.array_equal(atom1.coords, atom4.coords)):
@@ -362,6 +360,18 @@ class DoubleBondSide(Metric):
             if not np.array_equal(v1, v2):
                 plane_norm_v = np.cross(v1, v2)
 
-                face_sign = int(np.dot(plane_norm_v, v3) > 0)
+                u_v3 = v3 / np.linalg.norm(v3)
+                u_plane_norm_v = plane_norm_v / np.linalg.norm(plane_norm_v)
+
+                angle = np.arccos(np.dot(u_plane_norm_v, u_v3))
+
+                # If angle between vectors is lower than 60 degrees
+                if angle < 1.05:
+                    face_sign = 1
+                # If angle between vectors is higher than 120 degrees
+                elif angle > 2.09:
+                    face_sign = -1
+                else:
+                    face_sign = 0
 
         return face_sign
