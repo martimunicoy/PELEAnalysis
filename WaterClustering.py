@@ -54,6 +54,8 @@ def parseArgs():
                             centroids.
     normalize_densities : boolean
                           whether to normalize the density values or not.
+    debug : bool
+            whether to run in debug mode or not
     """
 
     def parse_coords(list_of_coords):
@@ -137,8 +139,13 @@ def parseArgs():
     optional.add_argument("--normalize_densities", dest='normalize_densities',
                           action='store_true', help="clustering densities " +
                           "are normalized in the output files")
+    optional.add_argument('-d', '--debug',
+                          dest="debug",
+                          action='store_true',
+                          help="Activate debug mode")
 
     parser.set_defaults(normalize_densities=False)
+    parser.set_defaults(debug=False)
 
     parser._action_groups.append(optional)
     args = parser.parse_args()
@@ -148,7 +155,7 @@ def parseArgs():
 
     return args.control_file, args.number_of_processors, args.water_ids, \
         parsed_ref_coords, args.first_steps_to_ignore, args.cluster_radius, \
-        centroids_output_path, args.normalize_densities
+        centroids_output_path, args.normalize_densities, args.debug
 
 
 def parse_water_ids(water_ids):
@@ -705,18 +712,23 @@ def main():
     called by the interpreter.
     """
 
-    log = Logger()
+    # Parse command-line arguments
+    control_file_path, number_of_processors, water_ids, ref_coords, \
+        first_steps_to_ignore, cluster_radius, centroids_output_path, \
+        normalize_densities, debug = parseArgs()
 
-    # Initial print
+    # Set up logger
+    log = Logger()
+    if debug:
+        log.set_level('DEBUG')
+    else:
+        log.set_level('INFO')
+
+    # Initial header
     log.info("+---------------------------------+")
     log.info("|    Water Clustering for PELE    |")
     log.info("+---------------------------------+")
     log.info("")
-
-    # Parse command-line arguments
-    control_file_path, number_of_processors, water_ids, ref_coords, \
-        first_steps_to_ignore, cluster_radius, centroids_output_path, \
-        normalize_densities = parseArgs()
 
     # Arguments validation
     log.info(' - Checking arguments')
