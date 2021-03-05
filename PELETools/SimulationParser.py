@@ -787,8 +787,9 @@ def simulationBuilderFromAdaptiveCF(adaptive_cf, pele_cf=None):
 def simulationBuilderFromPELECF(pele_cf):
     for command in pele_cf.data["commands"]:
         if command["commandType"] == "peleSimulation":
-            simulation_dir = os.path.dirname(pele_cf.path) + '/' + '/'.join(
-                command["PELE_Output"]["reportPath"].split('/')[:-1])
+            simulation_dir = os.path.join(
+                os.path.dirname(pele_cf.path),
+                os.path.dirname(command["PELE_Output"]["reportPath"]))
             report_name = command["PELE_Output"]["reportPath"]
             report_name = report_name.split('/')[-1]
             report_name = report_name.split('.')[0]
