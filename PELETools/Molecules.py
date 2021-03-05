@@ -8,7 +8,7 @@ import sys
 
 
 # FEP_PELE imports
-from .Utils import norm
+from .Utils import norm, Logger
 
 
 # Script information
@@ -243,20 +243,21 @@ class Model:
 
 
 def chainBuilder(list_of_links):
+    log = Logger()
     if ((type(list_of_links) != list) and
             (type(list_of_links) != tuple)):
-        print("Molecules:chainBuilder: Error, invalid list of links")
+        log.error("Molecules:chainBuilder: Error, invalid list of links")
         sys.exit(1)
 
     if (len(list_of_links) == 0):
-        print("Molecules:chainBuilder: Error, empty list of links")
+        log.error("Molecules:chainBuilder: Error, empty list of links")
         sys.exit(1)
 
     name = list_of_links[0].chain
 
     for link in list_of_links:
         if link.chain != name:
-            print("Molecules:chainBuilder: Error, links have different " +
+            log.error("Molecules:chainBuilder: Error, links have different " +
                   "chain ids and they must belong to the same PDB chain")
             sys.exit(1)
 
@@ -266,13 +267,15 @@ def chainBuilder(list_of_links):
 
 
 def linkBuilder(list_of_atoms):
+    log = Logger()
+
     if ((type(list_of_atoms) != list) and
             (type(list_of_atoms) != tuple)):
-        print("Molecules:linkBuilder: Error, invalid list of atoms")
+        log.error("Molecules:linkBuilder: Error, invalid list of atoms")
         sys.exit(1)
 
     if (len(list_of_atoms) == 0):
-        print("Molecules:linkBuilder: Error, empty list of atoms")
+        log.error("Molecules:linkBuilder: Error, empty list of atoms")
         sys.exit(1)
 
     name = list_of_atoms[0].residue_name
@@ -281,17 +284,17 @@ def linkBuilder(list_of_atoms):
 
     for atom in list_of_atoms:
         if atom.residue_name != name:
-            print("Molecules:linkBuilder: Error, atoms have different " +
-                  "residue names and they must belong to the same PDB residue")
+            log.error("Molecules:linkBuilder: Error, atoms have different " +
+                      "residue names and they must belong to the same PDB residue")
             sys.exit(1)
         if atom.residue_number != number:
-            print("Molecules:linkBuilder: Error, atoms have different " +
-                  "residue numbers and they must belong to the same PDB " +
-                  "residue")
+            log.error("Molecules:linkBuilder: Error, atoms have different " +
+                      "residue numbers and they must belong to the same PDB " +
+                      "residue")
             sys.exit(1)
         if atom.chain != chain:
-            print("Molecules:linkBuilder: Error, atoms have different " +
-                  "chain ids and they must belong to the same PDB residue")
+            log.error("Molecules:linkBuilder: Error, atoms have different " +
+                      "chain ids and they must belong to the same PDB residue")
             sys.exit(1)
 
     link = Link(name, number, chain, list_of_atoms)

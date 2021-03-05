@@ -101,7 +101,7 @@ def parseArgs():
             path = path.joinpath('centroids.pdb')
         elif (not path.is_file()):
             log = Logger()
-            log.warning('write_centroids Warning: invalid path to ' +
+            log.debug('write_centroids Warning: invalid path to ' +
                         '\'{}\''.format(path))
 
         return path

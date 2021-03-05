@@ -93,7 +93,7 @@ class AdaptiveControlFile(ControlFile):
 
         if (not pcf_path.is_file()):
             log = Logger()
-            log.warning('AdaptiveControlFile:getPELEControlFile: ' +
+            log.debug('AdaptiveControlFile:getPELEControlFile: ' +
                         'Warning, PELE control file not found')
             return None
 

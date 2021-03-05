@@ -30,7 +30,7 @@ class Epoch(object):
 
         if not str(self.path.name).isdigit():
             log = Logger()
-            log.warning('Epoch Warning: epoch\'s ' +
+            log.debug('Epoch Warning: epoch\'s ' +
                         'path should point to a folder ' +
                         'labeled with an integer. ' +
                         'Path is {}'.format(self.path))
@@ -140,7 +140,7 @@ class EpochBuilder(object):
 
         if (not trajectory_path.is_file()):
             log = Logger()
-            log.warning('EpochBuilder.build Warning: ' +
+            log.debug('EpochBuilder.build Warning: ' +
                         'trajectory for \'' +
                         '{}\' '.format(report) +
                         'not found at \'{}\''.format(trajectory_path))
@@ -155,7 +155,7 @@ class EpochBuilder(object):
 
         if (not logfile_path.is_file()):
             log = Logger()
-            log.warning('EpochBuilder.build Warning: logfile for \'' +
+            log.debug('EpochBuilder.build Warning: logfile for \'' +
                         '{}\' not found '.format(report) +
                         'at \'{}\''.format(logfile_path))
 
@@ -192,7 +192,7 @@ class Simulation(object):
 
         if (not self.output_directory.exists()):
             log = Logger()
-            log.warning('Simulation Warning: supplied output '
+            log.debug('Simulation Warning: supplied output '
                         'directory does not exist')
 
     @property
@@ -373,7 +373,7 @@ class Report:
                 "mod_" + self.path.name)
             if (not path_to_report.is_file()):
                 log = Logger()
-                log.warning('SimulationParser.getReportInfo Warning: ' +
+                log.debug('SimulationParser.getReportInfo Warning: ' +
                             'mod_report  not found, metrics will be ' +
                             'retrieved from original report file.')
                 path_to_report = self.path
@@ -409,7 +409,7 @@ class Report:
                 metrics, _ = self.getReportInfo(from_mod=True)
             else:
                 log = Logger()
-                log.warning('SimulationParser.getMetric Warning: ' +
+                log.debug('SimulationParser.getMetric Warning: ' +
                             'mod_report not found, metrics will be retrieved ' +
                             'from original report file.')
                 path_to_report = self.path.absolute()
@@ -620,11 +620,11 @@ class Trajectory:
                             break
                     except ValueError:
                         log = Logger()
-                        log.warning('Trajectory.writeModel Warning: ' +
+                        log.debug('Trajectory.writeModel Warning: ' +
                                     'invalid MODEL line detected')
             else:
                 log = Logger()
-                log.warning('Trajectory.writeModel Warning: ' +
+                log.debug('Trajectory.writeModel Warning: ' +
                             'model {} could not be '.format(model_id) +
                             'written to {}'.format(output_path))
 
@@ -699,7 +699,7 @@ def parseReports(reports_to_parse, parser):
         trajectories_found = glob.glob(reports_list)
         if len(trajectories_found) == 0:
             log = Logger()
-            log.warning('Warning: path to report file \'' +
+            log.debug('Warning: path to report file \'' +
                         '{}'.format(reports_list) + '\' not found.')
         for report in glob.glob(reports_list):
             reports.append(report)
