@@ -115,34 +115,39 @@ def parseArgs():
     optional.add_argument("-n", "--number_of_processors", metavar="INT",
                           type=int, help="number of processors " +
                           "that will be used to read the trajectories and " +
-                          "clusterize all the points", default=None)
+                          "clusterize all the points. Default is 1.",
+                          default=None)
     optional.add_argument("-w", "--water_id",
-                          metavar="CHAIN_ID:RESIDUE_NUMBER",
+                          metavar="CHAIN:RESNUM",
                           action='append', dest='water_ids',
                           type=str, help="selection of one water " +
                           "link to track in the clusterization. More than " +
                           "one water can be selected by adding multiple " +
                           "water id arguments", default=None)
     optional.add_argument("-r", "--reference_coordinates",
-                          metavar="CHAIN_ID_RESIDUE_NUMBER",
+                          metavar="X Y Z",
                           action='append', dest='ref_coords', nargs=3,
                           type=float, help="reference coordinates that will " +
-                          "be used to calculate the number of water matches")
+                          "be used to calculate the number of water matches." +
+                          " More than one reference coordinate can be " +
+                          "specified by adding multiple arguments.")
     optional.add_argument("-f", "--first_steps_to_ignore", metavar="INT",
                           type=int, help="Number of first steps that will " +
-                          "be filtered out", default=1)
+                          "be filtered out. Default is 1.", default=1)
     optional.add_argument("-R", "--cluster_radius", metavar="FLOAT",
-                          type=float, default=2)
+                          type=float, default=2, help="Clusters width in " +
+                          "angstroms. Default is 2.")
     optional.add_argument("-o", "--centroids_output_path", required=False,
                           metavar="PATH", type=str, default='centroids.pdb',
                           help="output path to save the centroids PDB file")
     optional.add_argument("--normalize_densities", dest='normalize_densities',
                           action='store_true', help="clustering densities " +
-                          "are normalized in the output files")
+                          "are normalized in the output files." +
+                          "Default is False.")
     optional.add_argument('-d', '--debug',
                           dest="debug",
                           action='store_true',
-                          help="Activate debug mode")
+                          help="Activate debug mode. Default is False.")
 
     parser.set_defaults(normalize_densities=False)
     parser.set_defaults(debug=False)
