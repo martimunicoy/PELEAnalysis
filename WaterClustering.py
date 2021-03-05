@@ -13,6 +13,7 @@ from copy import copy
 from pathlib import Path
 
 from PELETools import ControlFileParser
+from PELETools.Utils import Logger
 
 
 # Script information
@@ -97,8 +98,9 @@ def parseArgs():
         if (path.is_dir()):
             path = path.joinpath('centroids.pdb')
         elif (not path.is_file()):
-            print('write_centroids Warning: invalid path to \'{}\''.format(
-                path))
+            log = Logger()
+            log.warning('write_centroids Warning: invalid path to ' +
+                        '\'{}\''.format(path))
 
         return path
 
@@ -337,18 +339,18 @@ def obtain_water_data_from(control_file_path, number_of_processors,
 
         return atom_reports, atom_ids, atom_models, atom_coords, atom_steps
 
-    print('   - Parsing control file...')
-    print(' ', end='')
+    log = Logger()
+    log.info('   - Parsing control file...')
     builder = ControlFileParser.ControlFileBuilder(control_file_path)
     cf = builder.build()
     sim = cf.getSimulation()
-    print('   - Listing reports...')
+    log.info('   - Listing reports...')
     list_of_reports = []
     for epoch in sim:
         for report in epoch:
             list_of_reports.append(report)
 
-    print('   - Retrieving data using {} '.format(number_of_processors) +
+    log.info('   - Retrieving data using {} '.format(number_of_processors) +
           'processors...')
     parallel_function = partial(_parallel_atom_getter, water_simulation_ids)
     with Pool(number_of_processors) as pool:
@@ -356,7 +358,7 @@ def obtain_water_data_from(control_file_path, number_of_processors,
 
     fixed_atom_data = []
 
-    print('   - Linking report pointers...')
+    log.info('   - Linking report pointers...')
     for (path, name), atom_coords in atom_data:
         for report in list_of_reports:
             if ((report.path, report.name) == (path, name)):
@@ -366,7 +368,7 @@ def obtain_water_data_from(control_file_path, number_of_processors,
             raise NameError("Report {}{} not found".format(path, name))
         fixed_atom_data.append((report_pointer_to_add, atom_coords))
 
-    print('   - Parsing data...')
+    log.info('   - Parsing data...')
     return split_atom_data(fixed_atom_data), list_of_reports
 
 
@@ -519,16 +521,20 @@ def print_density_results(densities, reference_clusters=[]):
     reference_clusters : list
                          list of clusters that belong to the reference.
     """
-    print('     Ref', 'Cluster n.', 'Probability')
+    log = Logger()
+
+    log.info('     Ref', 'Cluster n.', 'Probability')
     for cluster_n, cluster_density in densities.items():
         if cluster_density < 0.01:
             continue
         if (cluster_n in reference_clusters):
-            print('      *    ', end='')
+            log.info('      *    ' +
+                     '{:3d}        {:5.3f}'.format(int(cluster_n),
+                                                   float(cluster_density)))
         else:
-            print('           ', end='')
-        print('{:3d}        {:5.3f}'.format(int(cluster_n),
-                                            float(cluster_density)))
+            log.info('           ' +
+                     '{:3d}        {:5.3f}'.format(int(cluster_n),
+                                                   float(cluster_density)))
 
 
 def write_centroids(estimator, densities, centroids_output_path,
@@ -699,11 +705,13 @@ def main():
     called by the interpreter.
     """
 
+    log = Logger()
+
     # Initial print
-    print("+---------------------------------+")
-    print("|    Water Clustering for PELE    |")
-    print("+---------------------------------+")
-    print("")
+    log.info("+---------------------------------+")
+    log.info("|    Water Clustering for PELE    |")
+    log.info("+---------------------------------+")
+    log.info("")
 
     # Parse command-line arguments
     control_file_path, number_of_processors, water_ids, ref_coords, \
@@ -711,20 +719,20 @@ def main():
         normalize_densities = parseArgs()
 
     # Arguments validation
-    print(' - Checking arguments')
+    log.info(' - Checking arguments')
     water_ids, number_of_processors = \
         arguments_validation(control_file_path,
                              number_of_processors,
                              water_ids)
 
-    print(' - Retrieving water data from reports')
+    log.info(' - Retrieving water data from reports')
     # Get water data from reports
     (atom_reports, atom_ids, atom_models, atom_coords, atom_steps), \
         list_of_reports = obtain_water_data_from(control_file_path,
                                                  number_of_processors,
                                                  water_ids)
 
-    print(' - Filtering structures')
+    log.info(' - Filtering structures')
     # Filter structures
     atom_reports, atom_ids, atom_models, atom_coords, atom_steps = \
         filter_structures(atom_reports,
@@ -734,23 +742,23 @@ def main():
                           atom_steps,
                           first_steps_to_ignore)
 
-    print(' - Clustering using {} processors'.format(number_of_processors))
+    log.info(' - Clustering using {} processors'.format(number_of_processors))
     estimator, results = clusterization(cluster_radius,
                                         number_of_processors,
                                         atom_coords)
 
-    print(' - Calculating densities')
+    log.info(' - Calculating densities')
     densities = get_density(atom_ids, results, estimator, water_ids)
 
-    print(' - Results')
+    log.info(' - Results')
     print_density_results(densities)
 
-    print(' - Writing centroids')
+    log.info(' - Writing centroids')
     write_centroids(estimator, densities, centroids_output_path,
                     normalize_densities)
 
     if (ref_coords is not None):
-        print(' - Calculating the number of matches for each model')
+        log.info(' - Calculating the number of matches for each model')
         append_matches_to_reports(calculate_matches(list_of_reports,
                                                     atom_reports,
                                                     atom_models,

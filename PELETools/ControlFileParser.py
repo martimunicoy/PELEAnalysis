@@ -10,6 +10,7 @@ from pathlib import Path
 # PELE imports
 from .SimulationParser import simulationBuilderFromAdaptiveCF
 from .SimulationParser import simulationBuilderFromPELECF
+from .Utils import Logger
 
 
 # Classes
@@ -91,8 +92,9 @@ class AdaptiveControlFile(ControlFile):
             self.data["simulation"]["params"]["controlFile"])
 
         if (not pcf_path.is_file()):
-            print("AdaptiveControlFile:getPELEControlFile: Warning, PELE " +
-                  "control file not found")
+            log = Logger()
+            log.warning('AdaptiveControlFile:getPELEControlFile: ' +
+                        'Warning, PELE control file not found')
             return None
 
         else:

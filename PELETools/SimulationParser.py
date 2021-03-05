@@ -3,19 +3,17 @@
 
 # Standard imports
 from __future__ import unicode_literals
-import os
-import glob
-import sys
-from pathlib import Path
 
+import glob
+import os
+from pathlib import Path
 
 # PELE imports
 from . import Plotter
 from .Molecules import atomBuilder
 from .Molecules import linkBuilder
 from .PDB import PDBHandler
-from .Utils import fromDictValuesToList, isThereAFile
-
+from .Utils import Logger
 
 # Script information
 __author__ = "Marti Municoy"
@@ -30,9 +28,12 @@ class Epoch(object):
     def __init__(self, path):
         self._path = Path(path)
 
-        if (not str(self.path.name).isdigit()):
-            print('Epoch Warning: epoch\'s path should point to a folder ' +
-                  'labeled with an integer. Path is {}'.format(self.path))
+        if not str(self.path.name).isdigit():
+            log = Logger()
+            log.warning('Epoch Warning: epoch\'s ' +
+                        'path should point to a folder ' +
+                        'labeled with an integer. ' +
+                        'Path is {}'.format(self.path))
 
         self._reports = []
 
@@ -138,8 +139,11 @@ class EpochBuilder(object):
             self.trajectory_name + '_' + str(report.id) + '.pdb')
 
         if (not trajectory_path.is_file()):
-            print('EpochBuilder.build Warning: trajectory for \'' +
-                  '{}\' not found at \'{}\''.format(report, trajectory_path))
+            log = Logger()
+            log.warning('EpochBuilder.build Warning: ' +
+                        'trajectory for \'' +
+                        '{}\' '.format(report) +
+                        'not found at \'{}\''.format(trajectory_path))
 
             return None
 
@@ -150,8 +154,10 @@ class EpochBuilder(object):
             self.logfile_name + '_' + str(report.id) + '.txt')
 
         if (not logfile_path.is_file()):
-            print('EpochBuilder.build Warning: logfile for \'' +
-                  '{}\' not found at \'{}\''.format(report, logfile_path))
+            log = Logger()
+            log.warning('EpochBuilder.build Warning: logfile for \'' +
+                        '{}\' not found '.format(report) +
+                        'at \'{}\''.format(logfile_path))
 
             return None
 
@@ -185,8 +191,9 @@ class Simulation(object):
         self.PDBHandler = PDBHandler(self)
 
         if (not self.output_directory.exists()):
-            print("Simulation Warning: supplied output directory does not " +
-                  "exist")
+            log = Logger()
+            log.warning('Simulation Warning: supplied output '
+                        'directory does not exist')
 
     @property
     def output_directory(self):
@@ -274,8 +281,9 @@ class AdaptiveSimulation(Simulation):
 
                 self._n_trajectories += epoch.n_trajectories
 
-        print("  - A total of {} epochs and ".format(self.n_epochs) +
-              "{} reports were found.".format(self.n_trajectories))
+        log = Logger()
+        log.info('  - A total of {} epochs and '.format(self.n_epochs) +
+                 '{} reports were found.'.format(self.n_trajectories))
 
 
 class PELESimulation(Simulation):
@@ -298,20 +306,9 @@ class PELESimulation(Simulation):
 
         self._n_trajectories = epoch.n_trajectories
 
-        print("  - A total of {} reports were found.".format(
-            self.n_trajectories))
-
-    def _getOutputFilesHere(self, directory):
-        path_to_reports = directory
-
-        for file in glob.glob(path_to_reports + '/' + self.report_name + "*"):
-            report = Report(path_to_reports, os.path.basename(file),
-                            self.report_name, self.PDBHandler)
-            report.setTrajectoryFile(self.trajectory_name)
-            report.setLogFile(self.logfile_name)
-
-            self.reports[directory][None].append(report)
-            self.trajectories += 1
+        log = Logger()
+        log.info('  - A total of {} '.format(self.n_trajectories) +
+                 'reports were found.')
 
 
 class Report:
@@ -375,9 +372,10 @@ class Report:
             path_to_report = self.path.parent.absolute().joinpath(
                 "mod_" + self.path.name)
             if (not path_to_report.is_file()):
-                print('SimulationParser.getReportInfo Warning: mod_report ' +
-                      'not found, metrics will be retrieved from original ' +
-                      'report file.')
+                log = Logger()
+                log.warning('SimulationParser.getReportInfo Warning: ' +
+                            'mod_report  not found, metrics will be ' +
+                            'retrieved from original report file.')
                 path_to_report = self.path
 
         with open(path_to_report) as report_file:
@@ -410,9 +408,10 @@ class Report:
             if (path_to_report.is_file()):
                 metrics, _ = self.getReportInfo(from_mod=True)
             else:
-                print('SimulationParser.getMetric Warning: mod_report not ' +
-                      'found, metrics will be retrieved from original ' +
-                      'report file.')
+                log = Logger()
+                log.warning('SimulationParser.getMetric Warning: ' +
+                            'mod_report not found, metrics will be retrieved ' +
+                            'from original report file.')
                 path_to_report = self.path.absolute()
 
         if (col_num is None):
@@ -476,21 +475,6 @@ class Trajectory:
     @property
     def models(self):
         return self._report.models
-
-    def isAtomThere(self, atom_data):
-        _, _, atom_name = atom_data
-        atom_name = atom_name.replace("_", " ")
-        atom_data[2] = atom_name
-
-        with open(self.path + "/" + self.name) as trajectory_file:
-            for i, line in enumerate(trajectory_file):
-                if (containsAtom(line, atom_data)):
-                    return True
-                if (self.PDBHandler is not None):
-                    if (i > self.PDBHandler.system_size):
-                        break
-
-        return False
 
     def getAtoms(self, atom_data):
         _, _, atom_name = atom_data
@@ -635,12 +619,14 @@ class Trajectory:
                         if (model_number == model_id):
                             break
                     except ValueError:
-                        print('Trajectory.writeModel Warning: ' +
-                              'invalid MODEL line detected')
+                        log = Logger()
+                        log.warning('Trajectory.writeModel Warning: ' +
+                                    'invalid MODEL line detected')
             else:
-                print('Trajectory.writeModel Warning: ' +
-                      'model {} could not be written to '.format(model_id) +
-                      '{}'.format(output_path))
+                log = Logger()
+                log.warning('Trajectory.writeModel Warning: ' +
+                            'model {} could not be '.format(model_id) +
+                            'written to {}'.format(output_path))
 
             for line in trajectory_file:
                 if (line[:6] == 'ENDMDL'):
@@ -712,13 +698,15 @@ def parseReports(reports_to_parse, parser):
     for reports_list in reports_to_parse:
         trajectories_found = glob.glob(reports_list)
         if len(trajectories_found) == 0:
-            print("Warning: path to report file \'" +
-                  "{}".format(reports_list) + "\' not found.")
+            log = Logger()
+            log.warning('Warning: path to report file \'' +
+                        '{}'.format(reports_list) + '\' not found.')
         for report in glob.glob(reports_list):
             reports.append(report)
 
     if len(reports) == 0:
-        print("Error: list of report files is empty.")
+        log = Logger()
+        log.info('List of report files is empty.')
         parser.print_help()
         exit(1)
 

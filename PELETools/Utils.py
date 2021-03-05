@@ -33,6 +33,132 @@ def fromDictValuesToList(input_dict):
     return output_list
 
 
+class Logger(object):
+    """
+    It contains all the required methods to handle logging messages.
+    """
+    import logging
+    DEFAULT_LEVEL = logging.INFO
+
+    def __init__(self):
+        """It initializes a Logger object"""
+        import logging
+
+        # Get peleffy logger and set level only the first time
+        if 'peleanalysis_log' not in logging.root.manager.loggerDict:
+            self._logger = logging.getLogger('peleanalysis_log')
+            self._logger.setLevel(self.DEFAULT_LEVEL)
+        else:
+            self._logger = logging.getLogger('peleanalysis_log')
+
+        # If no handler is found add stream handler
+        if not len(self._logger.handlers):
+            ch = logging.StreamHandler()
+            ch.setLevel(self.DEFAULT_LEVEL)
+            formatter = logging.Formatter('%(message)s')
+            ch.setFormatter(formatter)
+            self._logger.addHandler(ch)
+
+    def set_level(self, level):
+        """
+        It sets the logging level.
+
+        Parameters
+        ----------
+        level : str
+            The logging level to set. One of [DEBUG, INFO, WARNING, ERROR,
+            CRITICAL]
+        """
+        import logging
+
+        if level.upper() == 'DEBUG':
+            logging_level = logging.DEBUG
+        elif level.upper() == 'INFO':
+            logging_level = logging.INFO
+        elif level.upper() == 'WARNING':
+            logging_level = logging.WARNING
+        elif level.upper() == 'ERROR':
+            logging_level = logging.ERROR
+        elif level.upper() == 'CRITICAL':
+            logging_level = logging.CRITICAL
+        else:
+            raise ValueError('Invalid level type')
+
+        self._logger.setLevel(logging_level)
+        for handler in self._logger.handlers:
+            handler.setLevel(logging_level)
+
+    def debug(self, *messages):
+        """
+        It pulls a debug message.
+
+        Parameters
+        ----------
+        messages : list[str]
+            The list of messages to print
+        """
+        if len(messages) > 1:
+            self._logger.debug(' '.join(map(str, messages)))
+        else:
+            self._logger.debug(messages[0])
+
+    def info(self, *messages):
+        """
+        It pulls an info message.
+
+        Parameters
+        ----------
+        messages : list[str]
+            The list of messages to print
+        """
+        if len(messages) > 1:
+            self._logger.info(' '.join(map(str, messages)))
+        else:
+            self._logger.info(messages[0])
+
+    def warning(self, *messages):
+        """
+        It pulls a warning message.
+
+        Parameters
+        ----------
+        messages : list[str]
+            The list of messages to print
+        """
+        if len(messages) > 1:
+            self._logger.warning(' '.join(map(str, messages)))
+        else:
+            self._logger.warning(messages[0])
+
+    def error(self, *messages):
+        """
+        It pulls a error message.
+
+        Parameters
+        ----------
+        messages : list[str]
+            The list of messages to print
+        """
+        if len(messages) > 1:
+            self._logger.error(' '.join(map(str, messages)))
+        else:
+            self._logger.error(messages[0])
+
+    def critical(self, *messages):
+        """
+        It pulls a critical message.
+
+        Parameters
+        ----------
+        messages : list[str]
+            The list of messages to print
+        """
+        if len(messages) > 1:
+            self._logger.critical(' '.join(map(str, messages)))
+        else:
+            self._logger.critical(messages[0])
+
+
 def unpickle(binary_file):
     with open(binary_file, "rb") as f:
         while True:
