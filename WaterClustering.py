@@ -12,8 +12,7 @@ from collections import defaultdict
 from copy import copy
 from pathlib import Path
 
-from PELETools import ControlFileParser as cfp
-from PELETools import SimulationParser as sp
+from PELETools import ControlFileParser
 
 
 # Script information
@@ -339,10 +338,9 @@ def obtain_water_data_from(control_file_path, number_of_processors,
 
     print('   - Parsing control file...')
     print(' ', end='')
-    builder = cfp.ControlFileBuilder(control_file_path)
+    builder = ControlFileParser.ControlFileBuilder(control_file_path)
     cf = builder.build()
     sim = cf.getSimulation()
-
     print('   - Listing reports...')
     list_of_reports = []
     for epoch in sim:
