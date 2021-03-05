@@ -517,6 +517,34 @@ def get_density(atom_ids, results, estimator, water_simulation_ids):
     return density
 
 
+def get_ref_clusters(estimator, ref_coords):
+    """
+    It returns the reference clusters according to the estimator and the
+    coordinates that are supplied.
+
+    PARAMETERS
+    ----------
+    estimator : sklearn.cluster.MeanShift object
+                clusterization implementation that clusterizes through the
+                MeanShift method
+    ref_coords : list of numpy arrays
+                 reference coordinates that will be used to calculate the
+                 number of water matches
+    
+    RETURNS
+    -------
+    ref_clusters : list[int]
+                   the list of integers that belong to the cluster ids
+                   that belong to the reference
+    """
+    ref_clusters = list()
+
+    for coords in ref_coords:
+        ref_clusters.append(estimator.predict([coords]))
+
+    return ref_clusters
+
+
 def print_density_results(densities, reference_clusters=[]):
     """ It prints the density results.
 
@@ -762,8 +790,12 @@ def main():
     log.info(' - Calculating densities')
     densities = get_density(atom_ids, results, estimator, water_ids)
 
+    if ref_coords is not None:
+        log.info(' - Identifying reference clusters')
+        ref_clusters = get_ref_clusters(estimator, ref_coords)
+
     log.info(' - Results')
-    print_density_results(densities)
+    print_density_results(densities, ref_clusters)
 
     log.info(' - Writing centroids')
     write_centroids(estimator, densities, centroids_output_path,
