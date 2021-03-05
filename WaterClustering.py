@@ -125,7 +125,7 @@ def parseArgs():
                           "one water can be selected by adding multiple " +
                           "water id arguments", default=None)
     optional.add_argument("-r", "--reference_coordinates",
-                          metavar="X Y Z",
+                          metavar="FLOAT",
                           action='append', dest='ref_coords', nargs=3,
                           type=float, help="reference coordinates that will " +
                           "be used to calculate the number of water matches." +
