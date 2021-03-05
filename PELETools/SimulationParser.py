@@ -778,9 +778,14 @@ def simulationBuilderFromAdaptiveCF(adaptive_cf, pele_cf=None):
                 trajectory_name = command["PELE_Output"]["trajectoryPath"]
                 trajectory_name = trajectory_name.split('/')[-1]
                 trajectory_name = trajectory_name.split('.')[0]
-        logfile_name = pele_cf.data["simulationLogPath"]
-        logfile_name = logfile_name.split('/')[-1]
-        logfile_name = logfile_name.split('.')[0]
+
+        # Logfile might be missing
+        if "simulationLogPath" in pele_cf.data:
+            logfile_name = pele_cf.data["simulationLogPath"]
+            logfile_name = logfile_name.split('/')[-1]
+            logfile_name = logfile_name.split('.')[0]
+        else:
+            logfile_name = "logFile_"
 
     simulation = AdaptiveSimulation(simulation_dir,
                                     report_name=report_name,

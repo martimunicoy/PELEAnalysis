@@ -71,8 +71,9 @@ def parseArgs():
 
         parsed_coords = []
 
-        for coords in list_of_coords:
-            parsed_coords.append(np.array(coords))
+        if list_of_coords is not None:
+            for coords in list_of_coords:
+                parsed_coords.append(np.array(coords))
 
         return parsed_coords
 
