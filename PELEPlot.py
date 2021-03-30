@@ -41,7 +41,7 @@ def parseReports(reports_to_parse, parser=None):
     for reports_list in reports_to_parse:
         trajectories_found = glob.glob(reports_list)
         if len(trajectories_found) == 0:
-            "Warning: path to report file \'" +
+            print("Warning: path to report file \'" +
                   "{}".format(reports_list) + "\' not found.")
         for report in glob.glob(reports_list):
             reports.append(report)
