@@ -115,7 +115,8 @@ def parseArgs():
     optional.add_argument("-n", "--number_of_processors", metavar="INT",
                           type=int, help="number of processors " +
                           "that will be used to read the trajectories and " +
-                          "clusterize all the points. Default is 1.",
+                          "clusterize all the points. Default uses all " +
+                          "the processors that are available.",
                           default=None)
     optional.add_argument("-w", "--water_id",
                           metavar="CHAIN:RESNUM",
